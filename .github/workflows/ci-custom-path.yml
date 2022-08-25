@@ -68,4 +68,4 @@ jobs:
           tag_with_ref: true
           tags: "${{env.ECR_REPOSITORY}}-${{env.GITHUB_RUN_NUMBER}},latest"
           push: true
-          path: ${{ inputs.dockerfile-path }}
+          dockerfile: "${{ inputs.dockerfile-path }}/Dockerfile"
