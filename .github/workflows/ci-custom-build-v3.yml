@@ -1,0 +1,89 @@
+on:
+  workflow_call:
+    inputs:
+      role-to-assume:
+        required: true
+        type: string
+      ECR_REPOSITORY:
+        required: true
+        type: string
+      dockerfile-path:
+        required: false
+        type: string
+jobs:
+  build:
+    name: Build Image and Push to ECR
+    permissions:
+      id-token: write
+      contents: write
+    env:
+      ECR_REPOSITORY: ${{ inputs.ECR_REPOSITORY }}
+      IMAGE_TAG: ${{ github.sha }}
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Checkout Git Code
+        uses: actions/checkout@v2
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@master
+        with:
+          aws-region: us-east-1
+          role-to-assume: ${{ inputs.role-to-assume }}
+          role-session-name: GithubActionsSession
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      # - name: Cache Docker layers
+      #   uses: actions/cache@v3
+      #   with:
+      #     path: /tmp/.buildx-cache
+      #     key: ${{ runner.os }}-buildx-${{ github.sha }}
+      #     restore-keys: |
+      #       ${{ runner.os }}-buildx-
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      # - name: Get ECR login information
+      #   id: get-ecr-password
+      #   run: echo "::set-output name=password::$(aws ecr get-login-password)"
+
+      - name: Set GITHUB_RUN_NUMBER
+        run: |
+          echo GITHUB_RUN_NUMBER=$(( GITHUB_RUN_NUMBER + 279 ))>> $GITHUB_ENV
+          echo $GITHUB_RUN_NUMBER
+
+      # - name: Build and push
+      #   uses: docker/build-push-action@v1
+      #   env:
+      #     ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+      #   with:
+      #     registry: ${{ steps.login-ecr.outputs.registry }}
+      #     repository: ${{env.ECR_REPOSITORY}}
+      #     username: AWS
+      #     password: ${{ steps.get-ecr-password.outputs.password }}
+      #     add_git_labels: true
+      #     tag_with_ref: true
+      #     tags: "${{env.ECR_REPOSITORY}}-${{env.GITHUB_RUN_NUMBER}},latest"
+      #     push: true
+      #     dockerfile: "${{ inputs.dockerfile-path }}/Dockerfile"
+
+      - name: Build and push
+        uses: docker/build-push-action@v3
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        with:
+          # registry: ${{ steps.login-ecr.outputs.registry }}
+          # repository: ${{env.ECR_REPOSITORY}}
+          # username: AWS
+          # password: ${{ steps.get-ecr-password.outputs.password }}
+          # add_git_labels: true
+          # tag_with_ref: true
+          tags: "${{env.ECR_REPOSITORY}}-${{env.GITHUB_RUN_NUMBER}},latest"
+          push: true
+          # dockerfile: "${{ inputs.dockerfile-path }}/Dockerfile"
+          file: "${{ inputs.dockerfile-path }}/Dockerfile"
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
