@@ -72,8 +72,8 @@ jobs:
 
       - name: Build and push
         uses: docker/build-push-action@v3
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        # env:
+        #   ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         with:
           # registry: ${{ steps.login-ecr.outputs.registry }}
           # repository: ${{env.ECR_REPOSITORY}}
@@ -81,7 +81,7 @@ jobs:
           # password: ${{ steps.get-ecr-password.outputs.password }}
           # add_git_labels: true
           # tag_with_ref: true
-          tags: "${{env.ECR_REPOSITORY}}-${{env.GITHUB_RUN_NUMBER}},latest"
+          tags: "${{ steps.login-ecr.outputs.registry }}:${{env.ECR_REPOSITORY}}-${{env.GITHUB_RUN_NUMBER}},${{ steps.login-ecr.outputs.registry }}:latest"
           push: true
           # dockerfile: "${{ inputs.dockerfile-path }}/Dockerfile"
           file: "${{ inputs.dockerfile-path }}/Dockerfile"
