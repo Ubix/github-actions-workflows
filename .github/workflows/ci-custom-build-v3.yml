@@ -70,6 +70,13 @@ jobs:
       #     push: true
       #     dockerfile: "${{ inputs.dockerfile-path }}/Dockerfile"
 
+      - name: Get Tags for Image
+        id: metadata
+        uses: docker/metadata-action@v3
+        with:
+          images: "${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}"
+          tags: "${{env.ECR_REPOSITORY}}-${{env.GITHUB_RUN_NUMBER}},latest"
+
       - name: Build and push
         uses: docker/build-push-action@v3
         # env:
@@ -81,7 +88,7 @@ jobs:
           # password: ${{ steps.get-ecr-password.outputs.password }}
           # add_git_labels: true
           # tag_with_ref: true
-          tags: "${{ steps.login-ecr.outputs.registry }}:${{env.ECR_REPOSITORY}}-${{env.GITHUB_RUN_NUMBER}},${{ steps.login-ecr.outputs.registry }}:latest"
+          tags: ${{ steps.metadata.outputs.tags }}
           push: true
           # dockerfile: "${{ inputs.dockerfile-path }}/Dockerfile"
           file: "${{ inputs.dockerfile-path }}/Dockerfile"
