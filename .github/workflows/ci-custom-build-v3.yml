@@ -75,7 +75,9 @@ jobs:
         uses: docker/metadata-action@v3
         with:
           images: "${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}"
-          tags: "${{env.ECR_REPOSITORY}}-${{env.GITHUB_RUN_NUMBER}},latest"
+          tags: |
+            type=raw,value=${{env.ECR_REPOSITORY}}-${{env.GITHUB_RUN_NUMBER}}
+            type=sha
 
       - name: Build and push
         uses: docker/build-push-action@v3
