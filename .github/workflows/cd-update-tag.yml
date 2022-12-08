@@ -15,8 +15,12 @@ on:
         type: string
         description: "Image tag"
       values-path:
+        required: true
+        type: string
+      tag-path:
         required: false
         type: string
+        default: "deployment.image.tag"
 
 jobs:
   promote-to-env:
@@ -39,7 +43,7 @@ jobs:
         # change tag with yq
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
         git config --global user.name "github-actions[bot]"
-        yq -i ".${{inputs.service}}.deployment.image.tag = \"${{inputs.tag}}\"" "${{ inputs.values-path }}/values.yaml"
+        yq -i ".${{inputs.service}}.${{inputs.tag-path}} = \"${{inputs.tag}}\"" "${{ inputs.values-path }}/values.yaml"
         git add "${{ inputs.values-path }}/values.yaml"
         git commit -m "AUTO: Bump ${{ inputs.service }} image tag to ${{ inputs.tag }} for env ${{ inputs.environment }}"
         git push
