@@ -17,6 +17,8 @@ jobs:
       ECR_REPOSITORY: ${{ inputs.ECR_REPOSITORY }}
       IMAGE_TAG: ${{ github.sha }}
     runs-on: ubuntu-18.04
+    outputs:
+      tag: ${{ steps.set_github_run_number.outputs.GITHUB_RUN_NUMBER }}
     steps:
       - name: Checkout Git Code
         uses: actions/checkout@v2
@@ -48,6 +50,7 @@ jobs:
         run: echo "::set-output name=password::$(aws ecr get-login-password)"
 
       - name: Set GITHUB_RUN_NUMBER
+        id: set_github_run_number
         run: |
           echo GITHUB_RUN_NUMBER=$(( GITHUB_RUN_NUMBER + 279 ))>> $GITHUB_ENV
           echo $GITHUB_RUN_NUMBER
