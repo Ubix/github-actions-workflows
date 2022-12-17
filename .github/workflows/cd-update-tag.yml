@@ -21,6 +21,10 @@ on:
         required: false
         type: string
         default: "deployment.image.tag"
+      repository:
+        required: false
+        type: string
+        default: "git@github.com:Ubix/ubix-deployments.git"
 
 jobs:
   promote-to-env:
