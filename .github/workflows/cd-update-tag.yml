@@ -24,7 +24,7 @@ on:
       repository:
         required: false
         type: string
-        default: "git@github.com:Ubix/ubix-deployments.git"
+        default: "Ubix/ubix-deployments"
     secrets:
       token:
         description: 'A token passed from the caller workflow'
