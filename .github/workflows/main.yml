@@ -18,7 +18,7 @@ jobs:
       IMAGE_TAG: ${{ github.sha }}
     runs-on: ubuntu-18.04
     outputs:
-      tag: ${{ steps.set_github_run_number.outputs.GITHUB_RUN_NUMBER }}
+      tag: ${{ steps.set_github_run_number.outputs.outtag }}
     steps:
       - name: Checkout Git Code
         uses: actions/checkout@v2
@@ -53,7 +53,7 @@ jobs:
         id: set_github_run_number
         run: |
           echo GITHUB_RUN_NUMBER=$(( GITHUB_RUN_NUMBER + 279 ))>> $GITHUB_ENV
-          echo $GITHUB_RUN_NUMBER
+          echo "outtag=$GITHUB_RUN_NUMBER" >> $GITHUB_OUTPUT
 
       - name: Build and push
         uses: docker/build-push-action@v1
