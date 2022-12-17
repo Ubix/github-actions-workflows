@@ -7,6 +7,11 @@ on:
       ECR_REPOSITORY:
         required: true
         type: string
+    outputs:
+      tag:
+        description: "Tag of the new built docker image"
+        value: ${{ jobs.build.outputs.tag }}
+
 jobs:
   build:
     name: Build Image and Push to ECR
