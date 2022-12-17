@@ -41,6 +41,7 @@ jobs:
       with:
         repository: ${{ inputs.repository }}
         token: ${{ secrets.token }}
+        ref: main
 
     - name: Install yq
       id: setup-yq
