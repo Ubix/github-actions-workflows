@@ -49,7 +49,7 @@ jobs:
         id: set_github_run_number
         run: |
           echo GITHUB_RUN_NUMBER=$(( GITHUB_RUN_NUMBER + 279 ))>> $GITHUB_ENV
-          echo "outtag=${{env.ECR_REPOSITORY}}-$GITHUB_RUN_NUMBER" >> $GITHUB_OUTPUT
+          echo "outtag=${{env.ECR_REPOSITORY}}-$((GITHUB_RUN_NUMBER + 279))" >> $GITHUB_OUTPUT
 
       - name: Get Tags for Image
         id: metadata
