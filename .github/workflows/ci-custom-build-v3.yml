@@ -10,6 +10,11 @@ on:
       dockerfile-path:
         required: false
         type: string
+    outputs:
+      tag:
+        description: "Tag of the new built docker image"
+        value: ${{ jobs.build.outputs.tag }}
+
 jobs:
   build:
     name: Build Image and Push to ECR
@@ -20,6 +25,8 @@ jobs:
       ECR_REPOSITORY: ${{ inputs.ECR_REPOSITORY }}
       IMAGE_TAG: ${{ github.sha }}
     runs-on: ubuntu-18.04
+    outputs:
+      tag: ${{ steps.set_github_run_number.outputs.outtag }}
     steps:
       - name: Checkout Git Code
         uses: actions/checkout@v2
@@ -39,9 +46,10 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v1
 
       - name: Set GITHUB_RUN_NUMBER
+        id: set_github_run_number
         run: |
           echo GITHUB_RUN_NUMBER=$(( GITHUB_RUN_NUMBER + 279 ))>> $GITHUB_ENV
-          echo $GITHUB_RUN_NUMBER
+          echo "outtag=${{env.ECR_REPOSITORY}}-$((GITHUB_RUN_NUMBER + 279))" >> $GITHUB_OUTPUT
 
       - name: Get Tags for Image
         id: metadata

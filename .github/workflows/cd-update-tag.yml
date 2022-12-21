@@ -21,6 +21,14 @@ on:
         required: false
         type: string
         default: "deployment.image.tag"
+      repository:
+        required: false
+        type: string
+        default: "Ubix/ubix-deployments"
+    secrets:
+      token:
+        description: 'A token passed from the caller workflow'
+        required: false
 
 jobs:
   promote-to-env:
@@ -33,6 +41,7 @@ jobs:
       with:
         repository: ${{ inputs.repository }}
         token: ${{ secrets.token }}
+        ref: main
 
     - name: Install yq
       id: setup-yq
