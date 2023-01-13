@@ -29,7 +29,7 @@ jobs:
       tag: ${{ steps.set_github_run_number.outputs.outtag }}
     steps:
       - name: Checkout Git Code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@master
