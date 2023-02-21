@@ -21,7 +21,7 @@ jobs:
     env:
       ECR_REPOSITORY: ${{ inputs.ECR_REPOSITORY }}
       IMAGE_TAG: ${{ github.sha }}
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     outputs:
       tag: ${{ steps.set_github_run_number.outputs.outtag }}
     steps:
