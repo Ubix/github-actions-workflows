@@ -29,7 +29,7 @@ jobs:
       IMAGE_TAG: ${{ github.sha }}
     runs-on: ubuntu-20.04
     outputs:
-      tag: "${{ steps.set_github_run_number.outputs.outtag }}${{ inputs.identifier }}"
+      tag: "${{ steps.set_github_run_number.outputs.outtag }}"
     steps:
       - name: Checkout Git Code
         uses: actions/checkout@v2
