@@ -10,6 +10,12 @@ on:
       dockerfile-path:
         required: false
         type: string
+      AUTH_HEADER:
+        required: false
+        type: string
+      DOJO_URL:
+        required: false
+        type: string
     outputs:
       tag:
         description: "Tag of the new built docker image"
@@ -86,3 +92,12 @@ jobs:
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
           output: '/tmp/results.json'
+
+      - name: Run import_scan.sh
+        run: |
+          chmod +x import_scan.sh
+          ./import_scan.sh
+        env:
+          AUTH_HEADER_ENV: ${{ inputs.AUTH_HEADER }}
+          ECR_REPOSITORY: ${{ inputs.ECR_REPOSITORY }}
+          DOJO_URL: ${{ inputs.DOJO_URL }}
