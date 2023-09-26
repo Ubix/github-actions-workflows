@@ -122,7 +122,7 @@ jobs:
             -F 'commit_hash=' \
             -F 'group_by=finding_title' \
             -F 'version=' \
-            -F 'tags="CI Trivy Scan"' \
+            -F "tags='CI_Trivy_Scan',${{env.ECR_REPOSITORY}}" \
             -F 'api_scan_configuration=' \
             -F 'product_name=Ubix' \
             -F "file=@results.json;type=application/json" \
