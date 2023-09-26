@@ -83,20 +83,14 @@ jobs:
         run: |
           docker build -t docker.io/my-organization/my-app:${{ github.sha }} .
 
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: 'docker.io/my-organization/my-app:${{ github.sha }}'
-          format: 'json'
-          exit-code: '0'
-          timeout: '20m0s'
-          ignore-unfixed: true
-          vuln-type: 'os,library'
-          severity: 'CRITICAL,HIGH'
-          output: '/tmp/results.json'
-
-      - name: Run import_scan.sh
+      - name: Trivy vulnerability Scan and Import DefectDojo
         run: |
+          #Install Trivy
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.45.1
+
+          trivy image  --format json --exit-code  0 --ignore-unfixed --vuln-type  os,library --severity  CRITICAL,HIGH --output  ./results.json --timeout  20m0s  "docker.io/my-organization/my-app:${{ github.sha }}"
+
+          #Import Scan in Defect Dojo
           #Date environment variables
           YEAR=`date +%Y`
           MONTH=`date +%B`
@@ -131,7 +125,7 @@ jobs:
             -F 'tags="CI Trivy Scan"' \
             -F 'api_scan_configuration=' \
             -F 'product_name=Ubix' \
-            -F "file=@/tmp/results.json;type=application/json" \
+            -F "file=@results.json;type=application/json" \
             -F 'auto_create_context=' \
             -F 'lead=' \
             -F 'scan_type=Trivy Scan' \
