@@ -1,0 +1,134 @@
+on:
+  workflow_call:
+    inputs:
+      role-to-assume:
+        required: true
+        type: string
+      ECR_REPOSITORY:
+        required: true
+        type: string
+      dockerfile-path:
+        required: false
+        type: string
+      DOJO_URL:
+        required: false
+        type: string
+    secrets:
+      AUTH_HEADER:
+        description: 'Header used to authenticate in Defect Dojo'
+        required: false
+    outputs:
+      tag:
+        description: "Tag of the new built docker image"
+        value: ${{ jobs.build.outputs.tag }}
+
+jobs:
+  build:
+    name: Build Image and Push to ECR
+    permissions:
+      id-token: write
+      contents: write
+    env:
+      ECR_REPOSITORY: ${{ inputs.ECR_REPOSITORY }}
+      IMAGE_TAG: ${{ github.sha }}
+      DOJO_URL: ${{ inputs.DOJO_URL }}
+    runs-on: ubuntu-22.04
+    outputs:
+      tag: ${{ steps.set_github_run_number.outputs.outtag }}
+    steps:
+      - name: Checkout Git Code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1-node16
+        with:
+          aws-region: us-east-1
+          role-to-assume: ${{ inputs.role-to-assume }}
+          role-session-name: GithubActionsSession
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Set GITHUB_RUN_NUMBER
+        id: set_github_run_number
+        run: |
+          echo GITHUB_RUN_NUMBER=$(( GITHUB_RUN_NUMBER + 279 ))>> $GITHUB_ENV
+          echo "outtag=${{env.ECR_REPOSITORY}}-$((GITHUB_RUN_NUMBER + 279))" >> $GITHUB_OUTPUT
+
+      - name: Get Tags for Image
+        id: metadata
+        uses: docker/metadata-action@v4
+        with:
+          images: "${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}"
+          tags: |
+            type=raw,value=${{env.ECR_REPOSITORY}}-${{env.GITHUB_RUN_NUMBER}}
+            type=raw,value=latest-${{github.ref_name}}
+            type=sha
+
+      - name: Build and push
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          tags: "${{ steps.metadata.outputs.tags }}"
+          push: true
+          file: "${{ inputs.dockerfile-path }}/Dockerfile"
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build an image from Dockerfile
+        run: |
+          docker build -t docker.io/my-organization/my-app:${{ github.sha }} .
+
+      - name: Trivy vulnerability Scan and Import DefectDojo
+        run: |
+          #Install Trivy
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.45.1
+
+          trivy image  --format json --exit-code  0 --ignore-unfixed --vuln-type  os,library --severity  CRITICAL,HIGH --output  ./results.json --timeout  20m0s  "docker.io/my-organization/my-app:${{ github.sha }}"
+
+          #Import Scan in Defect Dojo
+          #Date environment variables
+          YEAR=`date +%Y`
+          MONTH=`date +%B`
+          SCAN_EXEC_DATE=`date +%Y-%m-%d`
+
+          curl -X 'POST' \
+            "${{env.DOJO_URL}}" \
+            -H 'accept: application/json' \
+            -H "Authorization: Token ${{ secrets.AUTH_HEADER }}" \
+            -H 'Content-Type: multipart/form-data' \
+            -H 'X-CSRFTOKEN: mycsrftoken' \
+            -F 'product_type_name=' \
+            -F 'active=true' \
+            -F 'endpoint_to_add=' \
+            -F 'verified=true' \
+            -F 'close_old_findings=true' \
+            -F 'test_title=' \
+            -F "engagement_name=$YEAR $MONTH Security Report" \
+            -F 'build_id=' \
+            -F 'deduplication_on_engagement=true' \
+            -F 'push_to_jira=false' \
+            -F 'minimum_severity=Info' \
+            -F 'close_old_findings_product_scope=false' \
+            -F "scan_date=$SCAN_EXEC_DATE" \
+            -F 'create_finding_groups_for_all_findings=true' \
+            -F 'engagement_end_date=' \
+            -F 'environment=Development' \
+            -F "service=${{env.ECR_REPOSITORY}}" \
+            -F 'commit_hash=' \
+            -F 'group_by=finding_title' \
+            -F 'version=' \
+            -F "tags='CI_Trivy_Scan',${{env.ECR_REPOSITORY}}" \
+            -F 'api_scan_configuration=' \
+            -F 'product_name=Ubix' \
+            -F "file=@results.json;type=application/json" \
+            -F 'auto_create_context=' \
+            -F 'lead=' \
+            -F 'scan_type=Trivy Scan' \
+            -F 'branch_tag=' \
+            -F 'source_code_management_uri=' \
+            -F 'engagement='
