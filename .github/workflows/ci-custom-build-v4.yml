@@ -79,9 +79,9 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Build an image from Dockerfile
+      - name: Tag the dockerfile for scanning purposes 
         run: |
-          docker build -t docker.io/my-organization/my-app:${{ github.sha }} .
+          docker image tag "${{ steps.metadata.outputs.tags }}" "docker.io/my-organization/my-app:${{ github.sha }}"
 
       - name: Trivy vulnerability Scan and Import DefectDojo
         run: |
