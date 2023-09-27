@@ -79,16 +79,12 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Tag the dockerfile for scanning purposes 
-        run: |
-          docker image tag "${{ steps.metadata.outputs.tags }}" "docker.io/my-organization/my-app:${{ github.sha }}"
-
       - name: Trivy vulnerability Scan and Import DefectDojo
         run: |
           #Install Trivy
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.45.1
 
-          trivy image  --format json --exit-code  0 --ignore-unfixed --vuln-type  os,library --severity  CRITICAL,HIGH --output  ./results.json --timeout  20m0s  "docker.io/my-organization/my-app:${{ github.sha }}"
+          trivy image  --format json --exit-code  0 --ignore-unfixed --vuln-type  os,library --severity  CRITICAL,HIGH --output  ./results.json --timeout  20m0s  "${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{env.ECR_REPOSITORY}}-${{env.GITHUB_RUN_NUMBER}}"
 
           #Import Scan in Defect Dojo
           #Date environment variables
