@@ -5,8 +5,9 @@ on:
         required: true
         type: string
       target-branch:
-        required: true
+        required: false
         type: string
+        default: ''
       ECR_REPOSITORY:
         required: true
         type: string
