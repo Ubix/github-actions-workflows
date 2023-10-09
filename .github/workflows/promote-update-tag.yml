@@ -68,6 +68,6 @@ jobs:
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
         git config --global user.name "github-actions[bot]"
         find cloudspace/overlays/"${{ inputs.environment }}" -type f -path "*/${{ inputs.values-path }}/values.yaml" -exec yq -i ".${{inputs.service}}.${{inputs.tag-path}} = \"${{inputs.tag}}\"" {} \;
-        git add "cloudspace/overlays/"${{ inputs.environment }}/"
+        git add "cloudspace/overlays/${{ inputs.environment }}/"
         git commit -m "AUTO: Bump ${{ inputs.service }} image tag to ${{ inputs.tag }} for all ${{ inputs.environment }} cloudspace accounts"
         git push
