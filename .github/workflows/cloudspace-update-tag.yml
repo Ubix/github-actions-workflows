@@ -49,25 +49,13 @@ jobs:
     - name: Install yq
       id: setup-yq
       uses: shiipou/setup-yq-action@v2.2.0
-
-    - name: Update single Cloudspace Account Tag
-      if: ${{ inputs.cloudspace_account != '' }}
-      run: |
-        # change tag with yq
-        git config --global user.email "github-actions[bot]@users.noreply.github.com"
-        git config --global user.name "github-actions[bot]"
-        yq -i ".${{inputs.service}}.${{inputs.tag-path}} = \"${{inputs.tag}}\"" "cloudspace/overlays/${{ inputs.environment }}/${{ inputs.cloudspace_account }}/${{ inputs.values-path }}/values.yaml"
-        git add "cloudspace/overlays/${{ inputs.environment }}/${{ inputs.cloudspace_account }}/${{ inputs.values-path }}/values.yaml"
-        git commit -m "AUTO: Bump ${{ inputs.service }} image tag to ${{ inputs.tag }} for ${{ inputs.environment }} cloudspace_account ${{ inputs.cloudspace_account }}"
-        git push
         
-    - name: Update all Cloudspace Accounts Tags
-      if: ${{ inputs.cloudspace_account == '' }}
+    - name: Update Cloudspace Account Tags
       run: |
         # change tag with yq
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
         git config --global user.name "github-actions[bot]"
-        find cloudspace/overlays/"${{ inputs.environment }}" -type f -path "*/${{ inputs.values-path }}/values.yaml" -exec yq -i ".${{inputs.service}}.${{inputs.tag-path}} = \"${{inputs.tag}}\"" {} \;
+        find cloudspace/overlays/"${{ inputs.environment }}/${{ inputs.cloudspace_account }}" -type f -path "*/${{ inputs.values-path }}/values.yaml" -exec yq -i ".${{inputs.service}}.${{inputs.tag-path}} = \"${{inputs.tag}}\"" {} \;
         git add "cloudspace/overlays/${{ inputs.environment }}/"
-        git commit -m "AUTO: Bump ${{ inputs.service }} image tag to ${{ inputs.tag }} for all ${{ inputs.environment }} cloudspace accounts"
+        git commit -m "AUTO: Bump ${{ inputs.service }} image tag to ${{ inputs.tag }} for ${{ inputs.environment }} ${{ inputs.cloudspace_account }} cloudspace account"
         git push
