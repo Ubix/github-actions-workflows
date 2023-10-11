@@ -58,7 +58,7 @@ jobs:
         # change tag with yq
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
         git config --global user.name "github-actions[bot]"
-        find ${{ inputs.base-path }}" -type f -path "*/${{ inputs.values-path }}/values.yaml" -exec yq -i ".${{inputs.service}}.${{inputs.tag-path}} = \"${{inputs.tag}}\"" {} \;
+        find "${{ inputs.base-path }}" -type f -path "*/${{ inputs.values-path }}/values.yaml" -exec yq -i ".${{inputs.service}}.${{inputs.tag-path}} = \"${{inputs.tag}}\"" {} \;
         git add "${{ inputs.base-path }}/"
         git commit -m "AUTO: Bump ${{ inputs.service }} image tag to ${{ inputs.tag }} for ${{ inputs.environment }} {{ inputs.cloudspace_account }}"
         git push
