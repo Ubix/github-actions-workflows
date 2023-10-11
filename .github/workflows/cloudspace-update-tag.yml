@@ -17,6 +17,9 @@ on:
       values-path:
         required: true
         type: string
+      base-path:
+        required: true
+        type: string
       tag-path:
         required: false
         type: string
@@ -26,8 +29,8 @@ on:
         type: string
         default: "Ubix/ubix-deployments"
       cloudspace_account:
-        required: false
         type: string
+        required: false
         default: ''
     secrets:
       token:
@@ -55,7 +58,7 @@ jobs:
         # change tag with yq
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
         git config --global user.name "github-actions[bot]"
-        find cloudspace/overlays/"${{ inputs.environment }}/${{ inputs.cloudspace_account }}" -type f -path "*/${{ inputs.values-path }}/values.yaml" -exec yq -i ".${{inputs.service}}.${{inputs.tag-path}} = \"${{inputs.tag}}\"" {} \;
-        git add "cloudspace/overlays/${{ inputs.environment }}/"
-        git commit -m "AUTO: Bump ${{ inputs.service }} image tag to ${{ inputs.tag }} for ${{ inputs.environment }} ${{ inputs.cloudspace_account }} cloudspace account"
+        find ${{ inputs.base-path }}" -type f -path "*/${{ inputs.values-path }}/values.yaml" -exec yq -i ".${{inputs.service}}.${{inputs.tag-path}} = \"${{inputs.tag}}\"" {} \;
+        git add "${{ inputs.base-path }}/"
+        git commit -m "AUTO: Bump ${{ inputs.service }} image tag to ${{ inputs.tag }} for ${{ inputs.environment }} {{ inputs.cloudspace_account }}"
         git push
