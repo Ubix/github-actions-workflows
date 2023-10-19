@@ -16,7 +16,7 @@ jobs:
   build:
     name: Build Image and Push to ECR
     permissions:
-      id-token: write
+      id-token: read
       contents: write
     env:
       ECR_REPOSITORY: ${{ inputs.ECR_REPOSITORY }}
