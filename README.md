@@ -6,11 +6,20 @@ The promote workflow consists of 2 job types, build which can vary depending on 
 
 ### Usage
 
-The promote workflow can be manually triggered on the application repos by `Actions -> Promote -> Run workflow` and filling up the inputs.
+The promote workflow can be manually triggered on the application repos by (see image):
+1. Select 'Actions' tab
+2. Select the 'Promote' worfklow
+3. Click on 'Run Workflow'
+4. Fill in the inputs (check next section)
+
+![Screenshot](promote.png)
+
+#### Inputs
+
 - Backoffice Applications:
-    1. `Environment to promote to` - Selects either stg or prd to update the application in.
+    1. `Environment to promote to` - Selects either stg or prd env to update the application in.
 - Cloudspace Applications:
-    1. `Environment to promote to` - Selects dev, stg or prd to update the application.
+    1. `Environment to promote to` - Selects dev, stg or prd env to update the application in.
     2. `Cloudspace account to promote to` [optional] - Selects which cloudspace account to update, if not filled will update all accounts on the selected env.
 
 ### Adding Promote to a repo/branch
