@@ -20,8 +20,28 @@ You can use as reference any workflow from `Examples` section.
 Promote workflow lives in the repos as `.github/workflows/promote.yml` and is configured as follows:
 
 - Inputs
-    |                    | type          | required| application              |
-    | -------------      |:-------------:|:-------:|:------------------------:|
-    | environment        | choice        | true    | backoffice and cloudspace|
-    | cloudspace_account | string        | false   | cloudspace               |
+    |                    | type          | required      | application              |
+    | -------------      |:-------------:|:-------------:|:------------------------:|
+    | environment        | choice        | true          | backoffice and cloudspace|
+    | cloudspace_account | string        | false         | cloudspace               |
 
+- Jobs
+    |                    |usage                          | application              |
+    | -------------      |:-----------------------------:|:------------------------:|
+    | call-ci-workflow   | builds image                  | backoffice and cloudspace|
+    | tag-docker-image   | updates application image tag | backoffice and cloudspace|
+
+     - call-ci-workflow : Varies depending on the application, common case is to use `Ubix/github-actions-workflows/.github/workflows/main.yml@main` setting up `role-to-assume` and `ECR_REPOSITORY`
+ 
+     - tag-docker-image : Uses `Ubix/github-actions-workflows/.github/workflows/promote-update-tag.yml@main` options:
+        1. `environment` - Gets from input the env 
+        2. `service` - Application naming (must match what is configured on values.yaml)
+        3. `tag` - Gets from call-ci-workflow job
+        4. `values-path` - Folder structure that contains the values.yaml file
+        5. `base-path` - Base folder where to look for the values.yaml ('Backoffice' or 'Cloudspace/overlays')
+        6. `tag-path` - Path configured inside values.yaml to the tag (Usually is "deployment.image.tag")
+        7. `cloudspace_account` [cloudspace only] - Gets from input cloudspace_account
+
+### Examples
+- Backoffice Application: https://github.com/Ubix/account-management-backend/blob/master/.github/workflows/promote.yml
+- Cloudspace Application: https://github.com/Ubix/solutionspace/blob/dev/.github/workflows/promote.yml
