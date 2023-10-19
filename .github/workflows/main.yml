@@ -17,7 +17,7 @@ jobs:
     name: Build Image and Push to ECR
     permissions:
       id-token: none
-      contents: write
+      contents: read
     env:
       ECR_REPOSITORY: ${{ inputs.ECR_REPOSITORY }}
       IMAGE_TAG: ${{ github.sha }}
