@@ -13,6 +13,10 @@ on:
       DOJO_URL:
         required: false
         type: string
+      runner:
+        required: false
+        type: string
+        default: "ubuntu-22.04"
     secrets:
       AUTH_HEADER:
         description: 'Header used to authenticate in Defect Dojo'
@@ -32,7 +36,7 @@ jobs:
       ECR_REPOSITORY: ${{ inputs.ECR_REPOSITORY }}
       IMAGE_TAG: ${{ github.sha }}
       DOJO_URL: ${{ inputs.DOJO_URL }}
-    runs-on: ubuntu-22.04
+    runs-on: ${{ inputs.runner }}
     outputs:
       tag: ${{ steps.set_github_run_number.outputs.outtag }}
     steps:
