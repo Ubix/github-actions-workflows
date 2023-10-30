@@ -52,5 +52,3 @@ jobs:
           tags: "${{ steps.metadata.outputs.tags }}"
           push: true
           file: "${{ inputs.dockerfile-path }}"
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
