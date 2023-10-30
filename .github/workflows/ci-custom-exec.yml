@@ -1,0 +1,56 @@
+on:
+  workflow_call:
+    inputs:
+      role-to-assume:
+        required: true
+        type: string
+      image-tag:
+        required: true
+        type: string
+      dockerfile-path:
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: self-hosted
+    permissions:
+      id-token: write
+      contents: write
+    steps:
+      - name: Checkout Git Code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1-node16
+        with:
+          aws-region: us-east-1
+          role-to-assume: ${{ inputs.role-to-assume }}
+          role-session-name: GithubActionsSession
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Get Tags for Image
+        id: metadata
+        uses: docker/metadata-action@v4
+        with:
+          images: "${{ steps.login-ecr.outputs.registry }}/exec-service-python"
+          tags: |
+            type=raw,value=${{ inputs.image-tag }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          tags: "${{ steps.metadata.outputs.tags }}"
+          push: true
+          file: "${{ inputs.dockerfile-path }}"
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
