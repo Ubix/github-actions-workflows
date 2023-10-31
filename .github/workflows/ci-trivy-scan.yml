@@ -25,7 +25,7 @@ on:
 
 jobs:
   build:
-    name: Build Image and Push to ECR
+    name: Trivy vulnerability Scanner
     permissions:
       id-token: write
       contents: write
@@ -48,7 +48,7 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Trivy vulnerability Scan and Import DefectDojo
+      - name: Scan Vulnerabilities and Report
         run: |
           #Install Trivy
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.45.1
