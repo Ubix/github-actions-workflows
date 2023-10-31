@@ -40,7 +40,8 @@ on:
 jobs:
   promote-to-env:
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment }}
+    environment: 
+      name: ${{ inputs.environment }}
     steps:
       # Clone Repository
     - name: Checkout private tools
