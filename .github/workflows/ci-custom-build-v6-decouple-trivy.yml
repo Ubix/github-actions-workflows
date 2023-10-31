@@ -1,0 +1,86 @@
+on:
+  workflow_call:
+    inputs:
+      role-to-assume:
+        required: true
+        type: string
+      ECR_REPOSITORY:
+        required: true
+        type: string
+      dockerfile-path:
+        required: false
+        type: string
+      DOJO_URL:
+        required: false
+        type: string
+      runner:
+        required: false
+        type: string
+        default: "ubuntu-22.04"
+    secrets:
+      AUTH_HEADER:
+        description: 'Header used to authenticate in Defect Dojo'
+        required: false
+    outputs:
+      tag:
+        description: "Tag of the new built docker image"
+        value: ${{ jobs.build.outputs.tag }}
+
+jobs:
+  build:
+    name: Build Image and Push to ECR
+    permissions:
+      id-token: write
+      contents: write
+    env:
+      ECR_REPOSITORY: ${{ inputs.ECR_REPOSITORY }}
+      IMAGE_TAG: ${{ github.sha }}
+      DOJO_URL: ${{ inputs.DOJO_URL }}
+    runs-on: self-hosted
+    outputs:
+      tag: ${{ steps.set_github_run_number.outputs.outtag }}
+    steps:
+      - name: Checkout Git Code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1-node16
+        with:
+          aws-region: us-east-1
+          role-to-assume: ${{ inputs.role-to-assume }}
+          role-session-name: GithubActionsSession
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Set GITHUB_RUN_NUMBER
+        id: set_github_run_number
+        run: |
+          echo GITHUB_RUN_NUMBER=$(( GITHUB_RUN_NUMBER + 279 ))>> $GITHUB_ENV
+          echo "outtag=${{env.ECR_REPOSITORY}}-$((GITHUB_RUN_NUMBER + 279))" >> $GITHUB_OUTPUT
+
+      - name: Get Tags for Image
+        id: metadata
+        uses: docker/metadata-action@v4
+        with:
+          images: "${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}"
+          tags: |
+            type=raw,value=${{env.ECR_REPOSITORY}}-${{env.GITHUB_RUN_NUMBER}}
+            type=raw,value=latest-${{github.ref_name}}
+            type=sha
+
+      - name: Build and push
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          tags: "${{ steps.metadata.outputs.tags }}"
+          push: true
+          file: "${{ inputs.dockerfile-path }}/Dockerfile"
+          # cache-from: type=gha
+          # cache-to: type=gha,mode=max
