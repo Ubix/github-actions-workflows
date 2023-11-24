@@ -1,0 +1,68 @@
+name: Update Tags
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+        description: "Environment that will be updated with new image tag"
+      service:
+        required: true
+        type: string
+        description: "Service that will be updated with new image tag"
+      tag:
+        required: true
+        type: string
+        description: "Image tag"
+      values-path:
+        required: true
+        type: string
+      tag-path:
+        required: false
+        type: string
+        default: "deployment.image.tag"
+      repository:
+        required: false
+        type: string
+        default: "Ubix/ubix-deployments"
+      runner:
+        required: false
+        type: string
+        default: "ubuntu-22.04"
+    secrets:
+      token:
+        description: 'A token passed from the caller workflow'
+        required: false
+
+jobs:
+  promote-to-env:
+    runs-on: ${{ inputs.runner }}
+    environment: ${{ inputs.environment }}
+    steps:
+      # Clone Repository
+    - name: Checkout private tools
+      uses: actions/checkout@v3
+      with:
+        repository: ${{ inputs.repository }}
+        token: ${{ secrets.token }}
+        ref: main
+
+    - name: Install yq
+      id: setup-yq
+      uses: shiipou/setup-yq-action@v2.2.0
+
+    - name: Update Tags
+      run: |
+        # change tag with yq
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git config --global user.name "github-actions[bot]"
+
+        IFS=',' read -r -a tag_paths <<< "${{inputs.tag-path}}"
+        for tag_path in "${tag_paths[@]}"
+        do
+          yq -i ".${{inputs.service}}.$tag_path = \"${{inputs.tag}}\"" "${{ inputs.values-path }}/values.yaml"
+        done
+
+        git add "${{ inputs.values-path }}/values.yaml"
+        git commit -m "AUTO: Bump ${{ inputs.service }} image tag to ${{ inputs.tag }} for env ${{ inputs.environment }}"
+        git push
