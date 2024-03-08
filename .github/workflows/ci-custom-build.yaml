@@ -16,7 +16,7 @@ on:
       runner:
         required: false
         type: string
-        default: "ubuntu-22.04"
+        default: "ubuntu-latest"
       environment:
         required: false
         type: string
@@ -24,6 +24,9 @@ on:
       enable_trivy:
         required: false
         default: false
+      cache-type:
+        required: false
+        default: gha
     secrets:
       AUTH_HEADER:
         description: 'Header used to authenticate in Defect Dojo'
@@ -89,8 +92,8 @@ jobs:
           build-args: |
             configuration=${{ inputs.environment }}
           file: "${{ inputs.dockerfile-path }}/Dockerfile"
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=${{ inputs.cache-type }}
+          cache-to: type=${{ inputs.cache-type }},mode=max
 
       - name: Trivy vulnerability Scan and Import DefectDojo
         if: inputs.enable_trivy == true
