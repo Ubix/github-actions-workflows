@@ -59,6 +59,7 @@ Promote workflow lives in the repos as `.github/workflows/promote.yml` and is co
 
 CI Custom Build
 
+For Regular Images 
 ```yaml
 call-ci-workflow:
     uses: Ubix/github-actions-workflows/.github/workflows/ci-custom-build.yaml@v1
@@ -72,4 +73,37 @@ call-ci-workflow:
       DOJO_URL: "https://security-console.schub.cloud/api/v2/import-scan/"
     secrets:
       AUTH_HEADER: ${{ secrets.AUTH_HEADER }}
+```
+
+For Huge Images
+```yaml
+call-ci-workflow:
+    uses: Ubix/github-actions-workflows/.github/workflows/ci-custom-build.yaml@v1
+    needs: authorize
+    with:
+      role-to-assume: arn:aws:iam::882490700787:role/modelspace-ghactionsopenid
+      ECR_REPOSITORY: modelspace
+      environment: dev # staging | dev | production (OPTIONAL, default to production)
+      enable_trivy: true # If true, trivy step will be executed (OPTIONAL, default to false)
+      dockerfile-path: .
+      DOJO_URL: "https://security-console.schub.cloud/api/v2/import-scan/"
+      runner: self-hosted
+      cache-type: local
+    secrets:
+      AUTH_HEADER: ${{ secrets.AUTH_HEADER }}
+```
+
+### Workflow Release Process
+
+Everytime we make any changes in any workflow, we need to create a new release with a specific tag for that version:
+
+1 - Merge your PR\
+2 - Create a new release following the pattern `vN` (eg.: v1, v2, v3, v...)\
+3 - Then we need to update the [doc](https://github.com/Ubix/github-actions-workflows?tab=readme-ov-file#workflows-usage) to set this new version for every workflow in the repository
+
+eg.:
+```yaml
+uses: Ubix/github-actions-workflows/.github/workflows/ci-custom-build.yaml@v1
+# or
+uses: Ubix/github-actions-workflows/.github/workflows/ci-custom-build.yaml@v2
 ```
