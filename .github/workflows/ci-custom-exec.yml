@@ -1,3 +1,4 @@
+# WARNING!!!!!!!!!! THIS WORKFLOW IS DEPRECATED, THE NEW ONE IS CI_CUSTOM_BUILD.YAML
 on:
   workflow_call:
     inputs:
@@ -10,10 +11,13 @@ on:
       dockerfile-path:
         required: true
         type: string
+      runner:
+        required: false
+        default: 
 
 jobs:
   build:
-    runs-on: self-hosted
+    runs-on: ${{ inputs.runner }}
     permissions:
       id-token: write
       contents: write

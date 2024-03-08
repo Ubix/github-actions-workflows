@@ -1,3 +1,4 @@
+# WARNING!!!!!!!!!! THIS WORKFLOW IS DEPRECATED, THE NEW ONE IS CI_CUSTOM_BUILD.YAML
 on:
   workflow_call:
     inputs:
