@@ -67,6 +67,7 @@ call-ci-workflow:
       role-to-assume: arn:aws:iam::882490700787:role/modelspace-ghactionsopenid
       ECR_REPOSITORY: modelspace
       environment: dev # staging | dev | production (OPTIONAL, default to production)
+      enable_trivy: true # If true, trivy step will be executed (OPTIONAL, default to false)
       dockerfile-path: .
       DOJO_URL: "https://security-console.schub.cloud/api/v2/import-scan/"
     secrets:
