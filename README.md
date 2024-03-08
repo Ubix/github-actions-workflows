@@ -54,3 +54,21 @@ Promote workflow lives in the repos as `.github/workflows/promote.yml` and is co
 ### Examples
 - Backoffice Application: https://github.com/Ubix/account-management-backend/blob/master/.github/workflows/promote.yml
 - Cloudspace Application: https://github.com/Ubix/solutionspace/blob/dev/.github/workflows/promote.yml
+
+### Workflows Usage
+
+CI Custom Build
+
+```yaml
+call-ci-workflow:
+    uses: Ubix/github-actions-workflows/.github/workflows/ci-custom-build.yaml@v1
+    needs: authorize
+    with:
+      role-to-assume: arn:aws:iam::882490700787:role/modelspace-ghactionsopenid
+      ECR_REPOSITORY: modelspace
+      environment: dev # staging | dev | production (OPTIONAL, default to production)
+      dockerfile-path: .
+      DOJO_URL: "https://security-console.schub.cloud/api/v2/import-scan/"
+    secrets:
+      AUTH_HEADER: ${{ secrets.AUTH_HEADER }}
+```
