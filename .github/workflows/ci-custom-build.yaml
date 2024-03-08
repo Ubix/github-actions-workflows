@@ -27,6 +27,8 @@ on:
       cache-type:
         required: false
         default: gha
+      build-args:
+        required: false
     secrets:
       AUTH_HEADER:
         description: 'Header used to authenticate in Defect Dojo'
@@ -90,7 +92,7 @@ jobs:
           tags: "${{ steps.metadata.outputs.tags }}"
           push: true
           build-args: |
-            configuration=${{ inputs.environment }}
+            ${{  }}
           file: "${{ inputs.dockerfile-path }}/Dockerfile"
           cache-from: type=${{ inputs.cache-type }}
           cache-to: type=${{ inputs.cache-type }},mode=max

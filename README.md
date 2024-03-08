@@ -71,6 +71,10 @@ call-ci-workflow:
       enable_trivy: true # If true, trivy step will be executed (OPTIONAL, default to false)
       dockerfile-path: .
       DOJO_URL: "https://security-console.schub.cloud/api/v2/import-scan/"
+      build-args: | # It needs to be a multiline argument with each argument in each line
+        arg1=value1
+        arg2=value2
+        arg3=value3
     secrets:
       AUTH_HEADER: ${{ secrets.AUTH_HEADER }}
 ```
