@@ -23,12 +23,15 @@ on:
         default: "production"
       enable_trivy:
         required: false
+        type: boolean
         default: false
       cache-type:
         required: false
+        type: string
         default: gha
       build-args:
         required: false
+        type: string
     secrets:
       AUTH_HEADER:
         description: 'Header used to authenticate in Defect Dojo'
