@@ -13,7 +13,8 @@ on:
         type: string
       runner:
         required: false
-        default: 
+        type: string
+        default: "ubuntu-latest"
 
 jobs:
   build:
