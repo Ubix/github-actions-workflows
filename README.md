@@ -82,7 +82,7 @@ call-ci-workflow:
 For Huge Images
 ```yaml
 call-ci-workflow:
-    uses: Ubix/github-actions-workflows/.github/workflows/ci-custom-build.yaml@v1
+    uses: Ubix/github-actions-workflows/.github/workflows/ci-custom-build.yaml@v2
     needs: authorize
     with:
       role-to-assume: arn:aws:iam::882490700787:role/modelspace-ghactionsopenid
