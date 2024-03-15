@@ -62,7 +62,7 @@ CI Custom Build
 For Regular Images 
 ```yaml
 call-ci-workflow:
-    uses: Ubix/github-actions-workflows/.github/workflows/ci-custom-build.yaml@v2
+    uses: Ubix/github-actions-workflows/.github/workflows/ci-custom-build.yaml@v3
     needs: authorize
     with:
       role-to-assume: arn:aws:iam::882490700787:role/modelspace-ghactionsopenid
@@ -82,7 +82,7 @@ call-ci-workflow:
 For Huge Images
 ```yaml
 call-ci-workflow:
-    uses: Ubix/github-actions-workflows/.github/workflows/ci-custom-build.yaml@v2
+    uses: Ubix/github-actions-workflows/.github/workflows/ci-custom-build.yaml@v3
     needs: authorize
     with:
       role-to-assume: arn:aws:iam::882490700787:role/modelspace-ghactionsopenid
@@ -109,5 +109,5 @@ eg.:
 ```yaml
 uses: Ubix/github-actions-workflows/.github/workflows/ci-custom-build.yaml@v1
 # or
-uses: Ubix/github-actions-workflows/.github/workflows/ci-custom-build.yaml@v2
+uses: Ubix/github-actions-workflows/.github/workflows/ci-custom-build.yaml@v3
 ```
