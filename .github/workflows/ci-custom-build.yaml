@@ -95,7 +95,7 @@ jobs:
           tags: "${{ steps.metadata.outputs.tags }}"
           push: true
           build-args: |
-            ${{  }}
+            ${{ inputs.build-args }}
           file: "${{ inputs.dockerfile-path }}/Dockerfile"
           cache-from: type=${{ inputs.cache-type }}
           cache-to: type=${{ inputs.cache-type }},mode=max
