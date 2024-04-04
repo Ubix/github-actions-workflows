@@ -7,6 +7,9 @@ on:
       ECR_REPOSITORY:
         required: true
         type: string
+      GAR_REPOSITORY:
+        required: true
+        type: string
       dockerfile-path:
         required: false
         type: string
@@ -49,6 +52,7 @@ jobs:
       contents: write
     env:
       ECR_REPOSITORY: ${{ inputs.ECR_REPOSITORY }}
+      GAR_REPOSITORY: ${{ inputs.GAR_REPOSITORY }}
       IMAGE_TAG: ${{ github.sha }}
       DOJO_URL: ${{ inputs.DOJO_URL }}
     runs-on: ${{ inputs.runner }}
@@ -64,6 +68,15 @@ jobs:
           aws-region: us-east-1
           role-to-assume: ${{ inputs.role-to-assume }}
           role-session-name: GithubActionsSession
+
+      - name: Authenticate with GCP
+        uses: 'google-github-actions/auth@v2'
+        with:
+          project_id: 'master-gcp-01'
+          workload_identity_provider: 'projects/1066792607720/locations/global/workloadIdentityPools/github-actions/providers/github-actions'
+
+      - name: "Set up Cloud SDK"
+        uses: "google-github-actions/setup-gcloud@v1"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
