@@ -35,7 +35,7 @@ on:
       build-args:
         required: false
         type: string
-      image:
+      image-name:
         required: false
         type: string
     secrets:
@@ -98,17 +98,17 @@ jobs:
         id: set_github_run_number
         run: |
           echo GITHUB_RUN_NUMBER=$(( GITHUB_RUN_NUMBER + 279 ))>> $GITHUB_ENV
-          echo "outtag=${{env.ECR_REPOSITORY}}-$((GITHUB_RUN_NUMBER + 279))" >> $GITHUB_OUTPUT
+          echo "outtag=$((GITHUB_RUN_NUMBER + 279))" >> $GITHUB_OUTPUT
 
-      - name: Get Tags for Image
-        id: metadata
-        uses: docker/metadata-action@v4
-        with:
-          images: "${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}"
-          tags: |
-            type=raw,value=${{env.ECR_REPOSITORY}}-${{env.GITHUB_RUN_NUMBER}}
-            type=raw,value=latest-${{github.ref_name}}
-            type=sha
+      # - name: Get Tags for Image
+      #   id: metadata
+      #   uses: docker/metadata-action@v4
+      #   with:
+      #     images: "${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}"
+      #     tags: |
+      #       type=raw,value=${{env.ECR_REPOSITORY}}-${{env.GITHUB_RUN_NUMBER}}
+      #       type=raw,value=latest-${{github.ref_name}}
+      #       type=sha
 
       - name: Build and push
         uses: docker/build-push-action@v3
@@ -122,10 +122,8 @@ jobs:
           cache-from: type=${{ inputs.cache-type }}
           cache-to: type=${{ inputs.cache-type }},mode=max
           tags: |
-            882490700787.dkr.ecr.us-east-1.amazonaws.com/${{ inputs.image }}:${{ steps.metadata.outputs.tags }}
-            882490700787.dkr.ecr.us-east-1.amazonaws.com/${{ inputs.image }}:1.0.0
-            us-east4-docker.pkg.dev/ubix-crossplane-gcp/artifact-registry${{ inputs.image }}:${{ steps.metadata.outputs.tags }}
-            us-east4-docker.pkg.dev/ubix-crossplane-gcp/artifact-registry${{ inputs.image }}:1.0.0 
+            882490700787.dkr.ecr.us-east-1.amazonaws.com/${{ inputs.image-name }}:${{env.GITHUB_RUN_NUMBER}}
+            us-east4-docker.pkg.dev/ubix-crossplane-gcp/artifact-registry/${{ inputs.image-name }}:${{env.GITHUB_RUN_NUMBER}}
 
       - name: Trivy vulnerability Scan and Import DefectDojo
         if: inputs.enable_trivy == true
