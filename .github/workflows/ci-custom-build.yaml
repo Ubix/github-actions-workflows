@@ -4,9 +4,6 @@ on:
       role-to-assume:
         required: true
         type: string
-      ECR_REPOSITORY:
-        required: true
-        type: string
       dockerfile-path:
         required: false
         type: string
@@ -32,6 +29,9 @@ on:
       build-args:
         required: false
         type: string
+      image-name:
+        required: true
+        type: string
     secrets:
       AUTH_HEADER:
         description: 'Header used to authenticate in Defect Dojo'
@@ -48,7 +48,6 @@ jobs:
       id-token: write
       contents: write
     env:
-      ECR_REPOSITORY: ${{ inputs.ECR_REPOSITORY }}
       IMAGE_TAG: ${{ github.sha }}
       DOJO_URL: ${{ inputs.DOJO_URL }}
     runs-on: ${{ inputs.runner }}
@@ -65,6 +64,21 @@ jobs:
           role-to-assume: ${{ inputs.role-to-assume }}
           role-session-name: GithubActionsSession
 
+      - name: Authenticate with GCP
+        id: auth
+        uses: 'google-github-actions/auth@v1'
+        with:
+          token_format: access_token
+          project_id: 'ubix-crossplane-gcp'
+          workload_identity_provider: 'projects/830786764024/locations/global/workloadIdentityPools/github-actions/providers/github-actions'
+  
+      - name: Login to GCR
+        uses: docker/login-action@v3
+        with:
+          registry: us-east4-docker.pkg.dev
+          username: oauth2accesstoken
+          password: ${{ steps.auth.outputs.access_token }}
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
@@ -76,29 +90,21 @@ jobs:
         id: set_github_run_number
         run: |
           echo GITHUB_RUN_NUMBER=$(( GITHUB_RUN_NUMBER + 279 ))>> $GITHUB_ENV
-          echo "outtag=${{env.ECR_REPOSITORY}}-$((GITHUB_RUN_NUMBER + 279))" >> $GITHUB_OUTPUT
-
-      - name: Get Tags for Image
-        id: metadata
-        uses: docker/metadata-action@v4
-        with:
-          images: "${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}"
-          tags: |
-            type=raw,value=${{env.ECR_REPOSITORY}}-${{env.GITHUB_RUN_NUMBER}}
-            type=raw,value=latest-${{github.ref_name}}
-            type=sha
+          echo "outtag=$((GITHUB_RUN_NUMBER + 279))" >> $GITHUB_OUTPUT
 
       - name: Build and push
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v5
         with:
           context: .
-          tags: "${{ steps.metadata.outputs.tags }}"
           push: true
           build-args: |
             ${{ inputs.build-args }}
           file: "${{ inputs.dockerfile-path }}/Dockerfile"
           cache-from: type=${{ inputs.cache-type }}
           cache-to: type=${{ inputs.cache-type }},mode=max
+          tags: |
+            882490700787.dkr.ecr.us-east-1.amazonaws.com/${{ inputs.image-name }}:${{env.GITHUB_RUN_NUMBER}}
+            us-east4-docker.pkg.dev/ubix-crossplane-gcp/artifact-registry/${{ inputs.image-name }}:${{env.GITHUB_RUN_NUMBER}}
 
       - name: Trivy vulnerability Scan and Import DefectDojo
         if: inputs.enable_trivy == true
