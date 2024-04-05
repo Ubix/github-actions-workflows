@@ -68,7 +68,6 @@ jobs:
         id: auth
         uses: 'google-github-actions/auth@v2'
         with:
-          service_account: artifact-registry-sa-dev@ubix-crossplane-gcp.iam.gserviceaccount.com
           token_format: access_token
           project_id: 'ubix-crossplane-gcp'
           workload_identity_provider: 'projects/830786764024/locations/global/workloadIdentityPools/gh-actions/providers/gh-actions'
