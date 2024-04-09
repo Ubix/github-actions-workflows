@@ -113,7 +113,7 @@ jobs:
           #Install Trivy
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.45.1
 
-          trivy image  --format json --exit-code  0 --ignore-unfixed --vuln-type  os,library --severity  CRITICAL,HIGH --output  ./results.json --timeout  20m0s  "${{ steps.login-ecr.outputs.registry }}/${{ input.image-name }}:${{input.image-name}}-${{env.GITHUB_RUN_NUMBER}}"
+          trivy image  --format json --exit-code  0 --ignore-unfixed --vuln-type  os,library --severity  CRITICAL,HIGH --output  ./results.json --timeout  20m0s  "${{ steps.login-ecr.outputs.registry }}/${{ inputs.image-name }}:${{inputs.image-name}}-${{env.GITHUB_RUN_NUMBER}}"
 
           #Import Scan in Defect Dojo
           #Date environment variables
@@ -143,11 +143,11 @@ jobs:
             -F 'create_finding_groups_for_all_findings=true' \
             -F 'engagement_end_date=' \
             -F 'environment=Development' \
-            -F "service=${{ input.image-name }}" \
+            -F "service=${{ inputs.image-name }}" \
             -F 'commit_hash=' \
             -F 'group_by=finding_title' \
             -F 'version=' \
-            -F "tags=${{ input.image-name }}" \
+            -F "tags=${{ inputs.image-name }}" \
             -F 'api_scan_configuration=' \
             -F 'product_name=Ubix' \
             -F "file=@results.json;type=application/json" \
