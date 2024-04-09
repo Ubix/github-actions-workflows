@@ -113,6 +113,13 @@ jobs:
       DOJO_URL: ${{ inputs.DOJO_URL }}
       image-name: ${{ inputs.image-name }}
     steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1-node16
+        with:
+          aws-region: us-east-1
+          role-to-assume: ${{ inputs.role-to-assume }}
+          role-session-name: GithubActionsSession
+  
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
