@@ -108,6 +108,7 @@ jobs:
             us-east4-docker.pkg.dev/ubix-crossplane-gcp/artifact-registry/${{ inputs.image-name }}:${{env.GITHUB_RUN_NUMBER}}
   scan:
     name: Trivy Scanning
+    runs-on: ${{ inputs.runner }}
     env:
       DOJO_URL: ${{ inputs.DOJO_URL }}
       image-name: ${{ inputs.image-name }}
