@@ -112,6 +112,9 @@ jobs:
     env:
       DOJO_URL: ${{ inputs.DOJO_URL }}
       image-name: ${{ inputs.image-name }}
+    permissions:
+      id-token: write
+      contents: write
     steps:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1-node16
