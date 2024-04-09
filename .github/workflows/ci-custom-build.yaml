@@ -106,7 +106,7 @@ jobs:
           tags: |
             882490700787.dkr.ecr.us-east-1.amazonaws.com/${{ inputs.image-name }}:${{env.GITHUB_RUN_NUMBER}}
             us-east4-docker.pkg.dev/ubix-crossplane-gcp/artifact-registry/${{ inputs.image-name }}:${{env.GITHUB_RUN_NUMBER}}
-
+            
       - name: Trivy vulnerability Scan and Import DefectDojo
         if: inputs.enable_trivy == true
         run: |
