@@ -26,6 +26,10 @@ on:
         required: false
         type: string
         default: gha
+      dest:
+        required: false
+        type: string
+        default: local
       build-args:
         required: false
         type: string
