@@ -25,11 +25,8 @@ on:
       cache-type:
         required: false
         type: string
-        default: gha
-      dest:
-        required: false
-        type: string
-        default: local
+        default: |
+          type=gha
       build-args:
         required: false
         type: string
