@@ -25,7 +25,8 @@ on:
       cache-type:
         required: false
         type: string
-        default: gha
+        default: |
+          type=gha
       build-args:
         required: false
         type: string
