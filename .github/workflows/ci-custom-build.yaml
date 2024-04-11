@@ -25,11 +25,11 @@ on:
       cache-from:
         required: false
         type: string
-        default: "type=local,src=."
+        default: "type=gha"
       cache-to:
         required: false
         type: string
-        default: "type=local,dest=."
+        default: "type=gha,mode=max"
       build-args:
         required: false
         type: string
@@ -105,8 +105,8 @@ jobs:
           build-args: |
             ${{ inputs.build-args }}
           file: "${{ inputs.dockerfile-path }}/Dockerfile"
-          cache-from: type=${{ inputs.cache-type }}
-          cache-to: type=${{ inputs.cache-type }},mode=max
+          cache-from: ${{ inputs.cache-from }}
+          cache-to: ${{ inputs.cache-to }}
           tags: |
             882490700787.dkr.ecr.us-east-1.amazonaws.com/${{ inputs.image-name }}:${{env.GITHUB_RUN_NUMBER}}
             us-east4-docker.pkg.dev/ubix-crossplane-gcp/artifact-registry/${{ inputs.image-name }}:${{env.GITHUB_RUN_NUMBER}}
