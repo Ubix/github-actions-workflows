@@ -117,7 +117,7 @@ jobs:
           #Install Trivy
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.45.1
 
-          trivy image  --format json --exit-code  0 --ignore-unfixed --vuln-type  os,library --severity  CRITICAL,HIGH --output  ./results.json --timeout  20m0s  "${{ steps.login-ecr.outputs.registry }}/${{ inputs.image-name }}:${{inputs.image-name}}-${{env.GITHUB_RUN_NUMBER}}"
+          trivy image  --format json --exit-code  0 --ignore-unfixed --vuln-type  os,library --severity  CRITICAL,HIGH --output  ./results.json --timeout  20m0s  "${{ steps.login-ecr.outputs.registry }}/${{ inputs.image-name }}:${{env.GITHUB_RUN_NUMBER}}"
 
           #Import Scan in Defect Dojo
           #Date environment variables
