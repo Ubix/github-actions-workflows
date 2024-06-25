@@ -10,6 +10,10 @@ on:
         required: false
         type: string
         default: "ubuntu-22.04"
+    outputs:
+      conf:
+        description: "Config build"
+        value: ${{ jobs.setup-configuration.outputs.conf }}
 
 jobs:
   setup-configuration:
