@@ -1,0 +1,33 @@
+name: Set Configuration for FE build
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+        description: "Environment that will be updated with new image tag"
+      runner:
+        required: false
+        type: string
+        default: "ubuntu-22.04"
+
+jobs:
+  setup-configuration:
+    runs-on: ${{ inputs.runner }}
+    outputs:
+      conf: ${{ steps.set-build-configuration.outputs.conf }}
+    steps:
+      - name: Set Build Configuration
+        id: set-build-configuration
+        run: |
+          case "${{ inputs.environment }}" in
+            "new-dev")
+              echo "conf=development" >> $GITHUB_OUTPUT
+              ;;
+            "stg")
+              echo "conf=stage" >> $GITHUB_OUTPUT
+              ;;
+            "prd")
+              echo "conf=production" >> $GITHUB_OUTPUT
+              ;;
+          esac
