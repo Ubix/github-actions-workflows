@@ -1,0 +1,29 @@
+name: Verify Branch and Tag
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+        description: "Environment to promote to"
+
+
+jobs:
+  github-ref-verify-on-promote:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check if branch is main or master for stg
+        if: ${{ github.ref_name != 'main' && github.ref_name != 'master' && inputs.environment == 'stg' }}
+        run: |
+          echo "Error: Deployment to 'stg' environment is only allowed from 'main' or 'master' branch."
+          exit 1
+
+      - name: Check if branch name is a valid release tag for prd
+        if: ${{ inputs.environment == 'prd' }}
+        run: |
+          if [[ ! "${{ github.ref }}" =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Error: Deployment to 'prd' environment requires a valid release tag (vX.X.X)."
+            exit 1
+          fi
+
