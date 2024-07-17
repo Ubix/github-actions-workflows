@@ -34,6 +34,7 @@ jobs:
           base_commit=$(git rev-list --max-count=1 origin/$BASE_BRANCH)
           feature_commit=$(git rev-list --max-count=1 origin/$FEATURE_BRANCH)
           commits_behind=$(git rev-list --count $base_commit..$feature_commit)
+          echo "$commits_behind"
           echo "commitDiffCount=$commits_behind" >> GITHUB_OUTPUTS
 
       - name: Check if commit difference is not 0
