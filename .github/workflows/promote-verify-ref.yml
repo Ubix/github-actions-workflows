@@ -27,8 +27,11 @@ jobs:
         id: cdc
         if: ${{ inputs.environment == 'new-dev'}}
         run: |
-          git log --oneline "origin/${{ env.BRANCH_NAME }}" "origin/${{ github.event.repository.default_branch }}" | wc -l
-          echo "commitDiffCount=$(git log --oneline "origin/${{ env.BRANCH_NAME }}" "origin/${{ github.event.repository.default_branch }}" | wc -l)" >> GITHUB_OUTPUTS
+          branch=$(git rev-parse --abbrev-ref HEAD)
+          base_commit=$(git rev-list --max-count=1 origin/$baseBranch)
+          feature_commit=$(git rev-list --max-count=1 origin/$featureBranch)
+          commits_behind=$(git rev-list --count $base_commit..$feature_commit)
+          echo "commitDiffCount=$commits_behind" >> GITHUB_OUTPUTS
 
       - name: Check if commit difference is not 0
         if: ${{ steps.cdc.outputs.commitDiffCount != 0 }} && ${{ inputs.environment == 'new-dev'}}
