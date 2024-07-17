@@ -11,8 +11,26 @@ on:
 jobs:
   github-ref-verify-on-promote:
     runs-on: ubuntu-latest
+    env:
+      BRANCH_NAME: ${{ github.head_ref || github.ref_name }} 
+    outputs: 
+      count-diff: ${{ steps.cdc.outputs.count }}
 
     steps:
+      - name: Get commit difference between source and base branch
+        id: cdc
+        uses: jessicalostinspace/commit-difference-action@v1.0.0
+        if: ${{ inputs.environment == 'new-dev'}}
+        with:
+          base-branch: ${{ env.BRANCH_NAME }}
+          secondary-branch: ${{ github.event.repository.default_branch }}
+
+      - name: Check if commit difference is not 0 
+        if: ${{ outputs.count-diff != 0 }} && ${{ inputs.environment == 'new-dev'}}
+        run: | 
+         echo "Your feature branch is not up-to-date. Please update it before proceeding. Aborting..." &&
+         gh run cancel
+
       - name: Check if branch is main or master for stg
         if: ${{ inputs.environment == 'stg' }}
         run: |
