@@ -26,10 +26,13 @@ jobs:
       - name: Get commit difference between source and base branch
         id: cdc
         if: ${{ inputs.environment == 'new-dev'}}
+        env:
+          FEATURE_BRANCH: ${{ env.BRANCH_NAME }}
+          BASE_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
           branch=$(git rev-parse --abbrev-ref HEAD)
-          base_commit=$(git rev-list --max-count=1 origin/$baseBranch)
-          feature_commit=$(git rev-list --max-count=1 origin/$featureBranch)
+          base_commit=$(git rev-list --max-count=1 origin/$BASE_BRANCH)
+          feature_commit=$(git rev-list --max-count=1 origin/$FEATURE_BRANCH)
           commits_behind=$(git rev-list --count $base_commit..$feature_commit)
           echo "commitDiffCount=$commits_behind" >> GITHUB_OUTPUTS
 
