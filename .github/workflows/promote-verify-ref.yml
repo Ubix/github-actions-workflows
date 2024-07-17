@@ -18,6 +18,9 @@ jobs:
     outputs: 
       count-diff: ${{ steps.cdc.outputs.commit-difference-count }}
     steps:
+      - name: Checkout Git Code
+        uses: actions/checkout@v3
+
       - name: Get commit difference between source and base branch
         id: cdc
         uses: jessicalostinspace/commit-difference-action@v1.0.0
