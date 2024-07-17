@@ -33,7 +33,7 @@ jobs:
         if: ${{ steps.cdc.outputs.commit-difference-count != 0 }} && ${{ inputs.environment == 'new-dev'}}
         run: | 
          echo "Your feature branch is not up-to-date. Please update it before proceeding. Aborting..." &&
-         gh run cancel
+         exit 1
 
       - name: Check if branch is main or master for stg
         if: ${{ inputs.environment == 'stg' }}
