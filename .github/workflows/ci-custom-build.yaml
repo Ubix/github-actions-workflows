@@ -54,6 +54,7 @@ jobs:
     env:
       IMAGE_TAG: ${{ github.sha }}
       DOJO_URL: ${{ inputs.DOJO_URL }}
+      BRANCH_NAME: ${{ github.head_ref || github.ref_name }} 
     runs-on: ${{ inputs.runner }}
     outputs:
       tag: ${{ steps.set_github_run_number.outputs.outtag }}
@@ -67,6 +68,13 @@ jobs:
           aws-region: us-east-1
           role-to-assume: ${{ inputs.role-to-assume }}
           role-session-name: GithubActionsSession
+
+      - name: Get Commit Difference Count Between Two Branches
+        id: cdc
+        uses: jessicalostinspace/commit-difference-action@v1.0.0
+        with:
+          base-branch: ${{ env.BRANCH_NAME }}
+          secondary-branch: ${{ github.event.repository.default_branch }}
 
       - name: Authenticate with GCP
         id: auth
