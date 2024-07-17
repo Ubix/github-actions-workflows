@@ -7,7 +7,7 @@ on:
         type: string
         description: "Environment to promote to"
     outputs: 
-      count-diff: ${{ jobs.github-ref-verify-on-promote.outputs.count }}
+      count-diff: ${{ jobs.github-ref-verify-on-promote.outputs.count-diff }}
 
 
 jobs:
