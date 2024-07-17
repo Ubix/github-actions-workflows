@@ -27,7 +27,7 @@ jobs:
           secondary-branch: ${{ github.event.repository.default_branch }}
 
       - name: Check if commit difference is not 0 
-        if: ${{ outputs.count-diff != 0 }} && ${{ inputs.environment == 'new-dev'}}
+        if: ${{ steps.cdc.outputs.count-diff != 0 }} && ${{ inputs.environment == 'new-dev'}}
         run: | 
          echo "Your feature branch is not up-to-date. Please update it before proceeding. Aborting..." &&
          gh run cancel
