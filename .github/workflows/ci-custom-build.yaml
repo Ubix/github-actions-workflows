@@ -36,6 +36,10 @@ on:
       image-name:
         required: true
         type: string
+      docker-build-platforms:
+        required: false
+        type: string
+        default: "linux/amd64"
     secrets:
       AUTH_HEADER:
         description: 'Header used to authenticate in Defect Dojo'
