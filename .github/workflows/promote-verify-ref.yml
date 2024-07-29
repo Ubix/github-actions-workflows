@@ -6,42 +6,36 @@ on:
         required: true
         type: string
         description: "Environment to promote to"
-    # outputs:
-    #   count-diff: ${{ jobs.github-ref-verify-on-promote.outputs.count-diff }}
-
 
 jobs:
   github-ref-verify-on-promote:
     runs-on: ubuntu-latest
-    # env:
-    #   BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
-    # outputs:
-    #   count-diff: ${{ steps.cdc.outputs.commit-difference-count }}
+    env:
+      BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+    outputs:
+      count-diff: ${{ steps.cdc.outputs.commit-difference-count }}
     steps:
-      # - name: Checkout Git Code
-      #   uses: actions/checkout@v3
-      #   with:
-      #     fetch-depth: 0
+      - name: Checkout Git Code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
-      # - name: Get commit difference between source and base branch
-      #   id: cdc
-      #   if: ${{ inputs.environment == 'new-dev'}}
-      #   env:
-      #     FEATURE_BRANCH: ${{ env.BRANCH_NAME }}
-      #     BASE_BRANCH: ${{ github.event.repository.default_branch }}
-      #   run: |
-      #     branch=$(git rev-parse --abbrev-ref HEAD)
-      #     base_commit=$(git rev-list --max-count=1 origin/$BASE_BRANCH)
-      #     feature_commit=$(git rev-list --max-count=1 origin/$FEATURE_BRANCH)
-      #     commits_behind=$(git rev-list --count $base_commit..$feature_commit)
-      #     echo "$commits_behind"
-      #     echo "commitDiffCount=$commits_behind" >> GITHUB_OUTPUTS
+      - name: Get commit difference between source and base branch
+        id: cdc
+        if: ${{ inputs.environment == 'new-dev'}}
+        env:
+          FEATURE_BRANCH: ${{ env.BRANCH_NAME }}
+          BASE_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          commits_behind=$(git log origin/${{ env.FEATURE_BRANCH }}..origin/${{ env.BASE_BRANCH }})
+          echo "$commits_behind"
+          echo "commitDiffCount=$commits_behind" >> GITHUB_OUTPUTS
 
-      # - name: Check if commit difference is not 0
-      #   if: ${{ steps.cdc.outputs.commitDiffCount != 0 }} && ${{ inputs.environment == 'new-dev'}}
-      #   run: |
-      #    echo "Your feature branch is not up-to-date. Please update it before proceeding. Aborting..." &&
-      #    exit 1
+      - name: Check if commit difference is not 0
+        if: ${{ steps.cdc.outputs.commitDiffCount != 0 }} && ${{ inputs.environment == 'new-dev'}}
+        run: |
+         echo "Your feature branch is not up-to-date. Please update it before proceeding. Aborting..." &&
+         exit 1
 
       - name: Check if branch is main or master for stg
         if: ${{ inputs.environment == 'stg' }}
