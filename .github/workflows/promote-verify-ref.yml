@@ -13,7 +13,7 @@ jobs:
     env:
       BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
     outputs:
-      count-diff: ${{ steps.cdc.outputs.commit-difference-count }}
+      count-diff: ${{ steps.cdc.outputs.commitDiffCount }}
     steps:
       - name: Checkout Git Code
         uses: actions/checkout@v3
@@ -29,13 +29,13 @@ jobs:
         run: |
           commits_behind=$(git rev-list --count origin/${{ env.FEATURE_BRANCH }}..origin/${{ env.BASE_BRANCH }})
           echo "$commits_behind"
-          echo "commitDiffCount=$commits_behind" >> GITHUB_OUTPUTS
+          echo "commitDiffCount=$commits_behind" >> $GITHUB_OUTPUT
 
       - name: Check if commit difference is not 0
         if: ${{ steps.cdc.outputs.commitDiffCount != 0 }} && ${{ inputs.environment == 'new-dev'}}
         run: |
-         echo "Your feature branch is not up-to-date. Please update it before proceeding. Aborting..." &&
-         exit 1
+          echo "Your feature branch is not up-to-date. It is behind by ${{ steps.cdc.outputs.commitDiffCount }} commits. Please update it before proceeding. Aborting..." &&
+          exit 1
 
       - name: Check if branch is main or master for stg
         if: ${{ inputs.environment == 'stg' }}
