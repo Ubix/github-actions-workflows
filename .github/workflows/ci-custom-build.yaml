@@ -36,6 +36,10 @@ on:
       image-name:
         required: true
         type: string
+      docker-build-platforms:
+        required: false
+        type: string
+        default: "linux/amd64"
     secrets:
       AUTH_HEADER:
         description: 'Header used to authenticate in Defect Dojo'
@@ -103,7 +107,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
-          platforms: linux/arm64
+          platforms: ${{ inputs.docker-build-platforms }}
           context: .
           push: true
           build-args: |
