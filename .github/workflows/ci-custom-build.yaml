@@ -40,6 +40,11 @@ on:
         required: false
         type: string
         default: "linux/amd64"
+      extra_tag:
+        description: 'Additional tag for the Docker image'
+        type: string
+        required: false
+        default: ''
     secrets:
       AUTH_HEADER:
         description: 'Header used to authenticate in Defect Dojo'
@@ -101,8 +106,9 @@ jobs:
       - name: Set GITHUB_RUN_NUMBER
         id: set_github_run_number
         run: |
-          echo GITHUB_RUN_NUMBER=$(( GITHUB_RUN_NUMBER + 279 ))>> $GITHUB_ENV
-          echo "outtag=$((GITHUB_RUN_NUMBER + 279))" >> $GITHUB_OUTPUT
+          GITHUB_RUN_TAG="${{ inputs.extra_tag }}$(( GITHUB_RUN_NUMBER + 279 ))"
+          echo GITHUB_RUN_NUMBER=$GITHUB_RUN_TAG >> $GITHUB_ENV
+          echo "outtag=$GITHUB_RUN_TAG" >> $GITHUB_OUTPUT
 
       - name: Build and push
         uses: docker/build-push-action@v6
