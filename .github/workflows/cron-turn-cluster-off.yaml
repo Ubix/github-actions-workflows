@@ -152,7 +152,8 @@ jobs:
 
     - name: Force-remove LTM pods in Backoffice
       run: |
-        kubectl delete pod -n addons --force --grace-period=0 $(kubectl get pods -n <namespace> | grep -E 'loki|mimir|tempo' | awk '{print $1}')
+        echo "----- Removing LTM pods in Backoffice -----"
+        kubectl delete pod -n addons --force --grace-period=0 $(kubectl get pods -n addons | grep -E 'loki|mimir|tempo' | awk '{print $1}')
 
     - name: Wait for backoffice nodes to be deleted
       run: |
@@ -183,7 +184,7 @@ jobs:
       run: |
 
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
-        git config --global user.name "github-actions[bot]"
+        git config --global user.name "github-actions[bot]"f
         
         if [ "${{ inputs.environment-name }}" == "stg" ]; then
           VALUES_FILE_PATH="cloudspace/overlays/stg/aws/stg-02/deployments/karpenter/karpenter"
