@@ -130,7 +130,7 @@ jobs:
             echo "Some nodes are not in a healthy state."
         fi
 
-    ######################## CLOUDSPACE #############################
+  ######################## CLOUDSPACE #############################
 
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v1-node16

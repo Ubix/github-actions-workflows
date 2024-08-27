@@ -54,7 +54,7 @@ jobs:
         token: ${{ secrets.token }}
         ref: main
 
-    ######################## BACKOFFICE #############################
+  ######################## BACKOFFICE #############################
 
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v1-node16
@@ -164,7 +164,7 @@ jobs:
         done
         echo "All backoffice-${{ inputs.environment-name }} nodes deleted successfully."
 
-    ######################## CLOUDSPACE #############################
+  ######################## CLOUDSPACE #############################
 
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v1-node16
