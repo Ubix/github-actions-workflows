@@ -21,7 +21,7 @@ on:
       cloudspace-role-to-assume:
         required: true
         type: string
-        description: "AWS IAM role to assume for AWS Backoffice EKS authentication"
+        description: "AWS IAM role to assume for AWS Cloudspace EKS authentication"
       cloudspace-cluster-name:
         required: true
         type: string
@@ -40,7 +40,6 @@ jobs:
     runs-on: ${{ inputs.runner }}
     steps:
 
-    
     - name: Validate environment
       run: |
         if [ "${{ inputs.environment-name }}" != "stg" ] && [ "${{ inputs.environment-name }}" != "prd" ]; then
@@ -55,7 +54,7 @@ jobs:
         token: ${{ secrets.token }}
         ref: main
 
-######################## BACKOFFICE #############################
+    ######################## BACKOFFICE #############################
 
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v1-node16
@@ -83,7 +82,6 @@ jobs:
 
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
         git config --global user.name "github-actions[bot]"
-
 
         VALUES_FILE_PATH="backoffice/karpenter/karpenter/${{ inputs.environment-name }}"
 
@@ -133,37 +131,39 @@ jobs:
     
     - name: Drain Backoffice nodes and delete
       run: |
-          cluster_name=$(kubectl config current-context)
-          nodes=$(kubectl get node -o wide --no-headers | grep -v 'fargate' | awk '{print $1}')
-          
-          for node in $nodes
-          do
-            echo "----- Draining node $node -----"
-            kubectl drain $node --ignore-daemonsets --delete-emptydir-data --grace-period=30 --force
-          
-            echo "----- Deleting node $node -----"
-            kubectl delete node $node &
+        cluster_name=$(kubectl config current-context)
+        nodes=$(kubectl get node -o wide --no-headers | grep -v 'fargate' | awk '{print $1}')
+        
+        for node in $nodes
+        do
+          echo "----- Draining node $node -----"
+          kubectl drain $node --ignore-daemonsets --delete-emptydir-data --grace-period=30 --force
+        
+          echo "----- Deleting node $node -----"
+          kubectl delete node $node &
 
-            sleep 3
+          sleep 3
 
-            echo "----- Deleting remaining non-replica pods on node $node -----"
-            kubectl get po -A -o custom-columns=NAME:.metadata.name,PARENT:".metadata.ownerReferences[].kind,NODE:.spec.nodeName,NAMESPACE:.metadata.namespace" | grep -v DaemonSet | grep $node | awk '{system("kubectl delete po " $1 " -n" $4)}'
-          done
+          echo "----- Deleting remaining non-replica pods on node $node -----"
+          kubectl get po -A -o custom-columns=NAME:.metadata.name,PARENT:".metadata.ownerReferences[].kind,NODE:.spec.nodeName,NAMESPACE:.metadata.namespace" | grep -v DaemonSet | grep $node | awk '{system("kubectl delete po " $1 " -n" $4)}'
+        done
 
-          echo "----- Finished deleting all nodes from $cluster_name cluster! -----"
+        echo "----- Finished deleting all nodes from $cluster_name cluster! -----"
+
+    - name: Force-remove LTM pods in Backoffice
+      run: |
+        kubectl delete pod -n addons --force --grace-period=0 $(kubectl get pods -n <namespace> | grep -E 'loki|mimir|tempo' | awk '{print $1}')
 
     - name: Wait for backoffice nodes to be deleted
       run: |
-          echo "----- Waiting for all nodes to be deleted -----"
-          while [ $(kubectl get nodes --no-headers | wc -l) -gt 0 ]; do
-            echo "Waiting for nodes to be deleted..."
-            sleep 10
-          done
-          echo "All backoffice-${{ inputs.environment-name }} nodes deleted successfully."
+        echo "----- Waiting for all nodes to be deleted -----"
+        while [ $(kubectl get nodes --no-headers | wc -l) -gt 0 ]; do
+          echo "Waiting for nodes to be deleted..."
+          sleep 10
+        done
+        echo "All backoffice-${{ inputs.environment-name }} nodes deleted successfully."
 
-
-######################## CLOUDSPACE #############################
-
+    ######################## CLOUDSPACE #############################
 
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v1-node16
@@ -192,7 +192,6 @@ jobs:
         else
           exit 1
         fi
-
 
         cd $VALUES_FILE_PATH
         
@@ -247,35 +246,34 @@ jobs:
     - name: Delete Kyverno MutateWebHooks in Cloudspace
       run: |
         echo "Deleting Kyverno MutateWebhookConfigurations..."
-
         kubectl get mutatingwebhookconfigurations -o name | grep kyverno | xargs kubectl delete
     
     - name: Drain Cloudspace nodes and delete
       run: |
-          cluster_name=$(kubectl config current-context)
-          nodes=$(kubectl get node -o wide --no-headers | grep -v 'fargate' | awk '{print $1}')
-          
-          for node in $nodes
-          do
-            echo "----- Draining node $node -----"
-            kubectl drain $node --ignore-daemonsets --delete-emptydir-data --grace-period=30 --force
-          
-            echo "----- Deleting node $node -----"
-            kubectl delete node $node &
+        cluster_name=$(kubectl config current-context)
+        nodes=$(kubectl get node -o wide --no-headers | grep -v 'fargate' | awk '{print $1}')
+        
+        for node in $nodes
+        do
+          echo "----- Draining node $node -----"
+          kubectl drain $node --ignore-daemonsets --delete-emptydir-data --grace-period=30 --force
+        
+          echo "----- Deleting node $node -----"
+          kubectl delete node $node &
 
-            sleep 3
+          sleep 3
 
-            echo "----- Deleting remaining non-replica pods on node $node -----"
-            kubectl get po -A -o custom-columns=NAME:.metadata.name,PARENT:".metadata.ownerReferences[].kind,NODE:.spec.nodeName,NAMESPACE:.metadata.namespace" | grep -v DaemonSet | grep $node | awk '{system("kubectl delete po " $1 " -n" $4)}'
-          done
+          echo "----- Deleting remaining non-replica pods on node $node -----"
+          kubectl get po -A -o custom-columns=NAME:.metadata.name,PARENT:".metadata.ownerReferences[].kind,NODE:.spec.nodeName,NAMESPACE:.metadata.namespace" | grep -v DaemonSet | grep $node | awk '{system("kubectl delete po " $1 " -n" $4)}'
+        done
 
-          echo "----- Finished deleting all nodes from $cluster_name cluster! -----"
+        echo "----- Finished deleting all nodes from $cluster_name cluster! -----"
 
     - name: Wait for Cloudspace nodes to be deleted
       run: |
-          echo "----- Waiting for all nodes to be deleted -----"
-          while [ $(kubectl get nodes --no-headers | wc -l) -gt 0 ]; do
-            echo "Waiting for nodes to be deleted..."
-            sleep 10
-          done
-          echo "All Cloudspace ${{ inputs.environment-name }} nodes deleted successfully."
+        echo "----- Waiting for all nodes to be deleted -----"
+        while [ $(kubectl get nodes --no-headers | wc -l) -gt 0 ]; do
+          echo "Waiting for nodes to be deleted..."
+          sleep 10
+        done
+        echo "All Cloudspace ${{ inputs.environment-name }} nodes deleted successfully."

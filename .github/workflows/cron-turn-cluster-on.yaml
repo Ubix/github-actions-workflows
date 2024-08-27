@@ -21,7 +21,7 @@ on:
       cloudspace-role-to-assume:
         required: true
         type: string
-        description: "AWS IAM role to assume for AWS Backoffice EKS authentication"
+        description: "AWS IAM role to assume for AWS Cloudspace EKS authentication"
       cloudspace-cluster-name:
         required: true
         type: string
@@ -54,7 +54,7 @@ jobs:
         token: ${{ secrets.token }}
         ref: main
 
-######################## BACKOFFICE #############################
+  ######################## BACKOFFICE #############################
 
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v1-node16
@@ -83,7 +83,6 @@ jobs:
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
         git config --global user.name "github-actions[bot]"
 
-
         VALUES_FILE_PATH="backoffice/karpenter/karpenter/${{ inputs.environment-name }}"
 
         cd $VALUES_FILE_PATH
@@ -106,34 +105,32 @@ jobs:
 
     - name: Wait for backoffice nodes to be created and ready
       run: |
-            echo "----- Waiting for all nodes to be created and ready -----"
-            nodes_status=$(kubectl get nodes -o wide)
+        echo "----- Waiting for all nodes to be created and ready -----"
+        nodes_status=$(kubectl get nodes -o wide)
 
-            nodes=$(echo "$nodes_status" | awk 'NR>1 {print $1}')
-            statuses=$(echo "$nodes_status" | awk 'NR>1 {print $2}')
+        nodes=$(echo "$nodes_status" | awk 'NR>1 {print $1}')
+        statuses=$(echo "$nodes_status" | awk 'NR>1 {print $2}')
 
-            all_nodes_ready=true
+        all_nodes_ready=true
 
-            while read -r node status; do
-            echo "Checking node: $node"
-            
-            if [ "$status" != "Ready" ]; then
-                echo "Node $node is not in Ready state. Status: $status"
-                all_nodes_ready=false
-            else
-                echo "Node $node is healthy and Ready."
-            fi
-            done <<< "$(paste <(echo "$nodes") <(echo "$statuses"))"
+        while read -r node status; do
+        echo "Checking node: $node"
+        
+        if [ "$status" != "Ready" ]; then
+            echo "Node $node is not in Ready state. Status: $status"
+            all_nodes_ready=false
+        else
+            echo "Node $node is healthy and Ready."
+        fi
+        done <<< "$(paste <(echo "$nodes") <(echo "$statuses"))"
 
-            if [ "$all_nodes_ready" = true ]; then
-                echo "All nodes in backoffice-${{ inputs.environment-name }} are created and healthy."
-            else
-                echo "Some nodes are not in a healthy state."
-            fi
+        if [ "$all_nodes_ready" = true ]; then
+            echo "All nodes in backoffice-${{ inputs.environment-name }} are created and healthy."
+        else
+            echo "Some nodes are not in a healthy state."
+        fi
 
-
-######################## CLOUDSPACE #############################
-
+    ######################## CLOUDSPACE #############################
 
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v1-node16
@@ -163,7 +160,6 @@ jobs:
           exit 1
         fi
 
-
         cd $VALUES_FILE_PATH
         
         # patch karpenter replica
@@ -186,30 +182,29 @@ jobs:
         
         git push
 
-
     - name: Wait for Cloudspace nodes to be created and ready
       run: |
-              echo "----- Waiting for all nodes to be created and ready -----"
-              nodes_status=$(kubectl get nodes -o wide)
-  
-              nodes=$(echo "$nodes_status" | awk 'NR>1 {print $1}')
-              statuses=$(echo "$nodes_status" | awk 'NR>1 {print $2}')
-  
-              all_nodes_ready=true
-  
-              while read -r node status; do
-              echo "Checking node: $node"
-              
-              if [ "$status" != "Ready" ]; then
-                  echo "Node $node is not in Ready state. Status: $status"
-                  all_nodes_ready=false
-              else
-                  echo "Node $node is healthy and Ready."
-              fi
-              done <<< "$(paste <(echo "$nodes") <(echo "$statuses"))"
-  
-              if [ "$all_nodes_ready" = true ]; then
-                  echo "All nodes in Cloudspace ${{ inputs.environment-name }} are created and healthy."
-              else
-                  echo "Some nodes are not in a healthy state."
-              fi
+        echo "----- Waiting for all nodes to be created and ready -----"
+        nodes_status=$(kubectl get nodes -o wide)
+
+        nodes=$(echo "$nodes_status" | awk 'NR>1 {print $1}')
+        statuses=$(echo "$nodes_status" | awk 'NR>1 {print $2}')
+
+        all_nodes_ready=true
+
+        while read -r node status; do
+        echo "Checking node: $node"
+        
+        if [ "$status" != "Ready" ]; then
+            echo "Node $node is not in Ready state. Status: $status"
+            all_nodes_ready=false
+        else
+            echo "Node $node is healthy and Ready."
+        fi
+        done <<< "$(paste <(echo "$nodes") <(echo "$statuses"))"
+
+        if [ "$all_nodes_ready" = true ]; then
+            echo "All nodes in Cloudspace ${{ inputs.environment-name }} are created and healthy."
+        else
+            echo "Some nodes are not in a healthy state."
+        fi
