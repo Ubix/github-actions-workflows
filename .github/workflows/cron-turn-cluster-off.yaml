@@ -137,7 +137,7 @@ jobs:
         for node in $nodes
         do
           echo "----- Draining node $node -----"
-          kubectl drain $node --ignore-daemonsets --delete-emptydir-data --grace-period=30 --force
+          kubectl drain $node --ignore-daemonsets --delete-emptydir-data --grace-period=30 --force &
 
           echo "----- Deleting node $node -----"
           kubectl delete node $node &
