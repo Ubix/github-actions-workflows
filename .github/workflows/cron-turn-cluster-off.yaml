@@ -150,10 +150,9 @@ jobs:
 
         echo "----- Finished deleting all nodes from $cluster_name cluster! -----"
 
-    # - name: Force-remove LTM pods in Backoffice
-    #   run: |
-    #     echo "----- Removing LTM pods in Backoffice -----"
-    #     kubectl delete pod -n addons --force --grace-period=0 $(kubectl get pods -n addons | grep -E 'loki|mimir|tempo' | awk '{print $1}')
+    - name: Scale karpenter to 0 in backoffice
+      run: |
+        kubectl scale deployment karpenter--replicas=0 -n karpenter
 
     - name: Wait for backoffice nodes to be deleted
       run: |
@@ -164,9 +163,6 @@ jobs:
         done
         echo "All backoffice-${{ inputs.environment-name }} nodes deleted successfully."
 
-    - name: Scale karpenter to 0 in backoffice
-      run: |
-        kubectl scale deployment karpenter--replicas=0 -n karpenter
 
   ######################## CLOUDSPACE #############################
 
@@ -273,6 +269,10 @@ jobs:
 
         echo "----- Finished deleting all nodes from $cluster_name cluster! -----"
 
+    - name: Scale karpenter to 0 in Cloudspace
+      run: |
+        kubectl scale deployment karpenter--replicas=0 -n karpenter
+
     - name: Wait for Cloudspace nodes to be deleted
       run: |
         echo "----- Waiting for all nodes to be deleted -----"
@@ -281,7 +281,3 @@ jobs:
           sleep 10
         done
         echo "All Cloudspace ${{ inputs.environment-name }} nodes deleted successfully."
-
-    - name: Scale karpenter to 0 in Cloudspace
-      run: |
-        kubectl scale deployment karpenter--replicas=0 -n karpenter
