@@ -89,7 +89,7 @@ jobs:
 
         ls
 
-        VALUES_FILE_PATH="ubix-deployments/backoffice/karpenter/karpenter/${{ inputs.environment-name }}"
+        VALUES_FILE_PATH="backoffice/karpenter/karpenter/${{ inputs.environment-name }}"
 
         cd $VALUES_FILE_PATH
 
