@@ -87,10 +87,10 @@ jobs:
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
         git config --global user.name "github-actions[bot]"
 
-        VALUES_FILE_PATH="backoffice/karpenter/karpenter/${{ inputs.environment-name }}"
+        VALUES_FILE_PATH="ubix-deployments/backoffice/karpenter/karpenter/${{ inputs.environment-name }}"
 
         cd $VALUES_FILE_PATH
-        
+
         # patch karpenter replica
         yq eval '.karpenter.replicas = 0' -i values.yaml
 
@@ -120,7 +120,7 @@ jobs:
         git add $VALUES_FILE_PATH/values.yaml
 
         git diff-index --quiet --cached HEAD || git commit -m "AUTO:Set Karpenter replica to and nodePool resources to 0 in backoffice-${{ inputs.environment-name }}"
-        
+
         git push
 
     - name: Scale karpenter to 0 in backoffice
@@ -132,17 +132,17 @@ jobs:
         echo "Deleting Kyverno MutateWebhookConfigurations..."
 
         kubectl get mutatingwebhookconfigurations -o name | grep kyverno | xargs kubectl delete
-    
+
     - name: Drain Backoffice nodes and delete
       run: |
         cluster_name=$(kubectl config current-context)
         nodes=$(kubectl get node -o wide --no-headers | grep -v 'fargate' | awk '{print $1}')
-        
+
         for node in $nodes
         do
           echo "----- Draining node $node -----"
           kubectl drain $node --ignore-daemonsets --delete-emptydir-data --grace-period=30 --force
-        
+
           echo "----- Deleting node $node -----"
           kubectl delete node $node &
 
@@ -189,7 +189,7 @@ jobs:
 
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
         git config --global user.name "github-actions[bot]"f
-        
+
         if [ "${{ inputs.environment-name }}" == "stg" ]; then
           VALUES_FILE_PATH="cloudspace/overlays/stg/aws/stg-02/deployments/karpenter/karpenter"
         elif [ "${{ inputs.environment-name }}" == "prd" ]; then
@@ -199,13 +199,16 @@ jobs:
         fi
 
         cd $VALUES_FILE_PATH
-        
+
         # patch karpenter replica
         yq eval '.karpenter.replicas = 0' -i values.yaml
 
         # set nodepooil resources to 0
         yq eval '.karpenter-resources.nodePools.jobs.limits.memory = "0"' -i values.yaml
         yq eval '.karpenter-resources.nodePools.jobs.limits.cpu = "0"' -i values.yaml
+
+        yq eval '.karpenter-resources.nodePools.ingestion-jobs.limits.memory = "0"' -i values.yaml
+        yq eval '.karpenter-resources.nodePools.ingestion-jobs.limits.cpu = "0"' -i values.yaml
 
         yq eval '.karpenter-resources.nodePools.exec-service-python.limits.memory = "0"' -i values.yaml
         yq eval '.karpenter-resources.nodePools.exec-service-python.limits.cpu = "0"' -i values.yaml
@@ -241,7 +244,7 @@ jobs:
         git add $VALUES_FILE_PATH/values.yaml
 
         git diff-index --quiet --cached HEAD || git commit -m "AUTO:Set Karpenter replica to and nodePool resources to 0 in cloudspace ${{ inputs.environment-name }}"
-        
+
         git push
 
     - name: Scale karpenter to 0 in Cloudspace
@@ -252,17 +255,17 @@ jobs:
       run: |
         echo "Deleting Kyverno MutateWebhookConfigurations..."
         kubectl get mutatingwebhookconfigurations -o name | grep kyverno | xargs kubectl delete
-    
+
     - name: Drain Cloudspace nodes and delete
       run: |
         cluster_name=$(kubectl config current-context)
         nodes=$(kubectl get node -o wide --no-headers | grep -v 'fargate' | awk '{print $1}')
-        
+
         for node in $nodes
         do
           echo "----- Draining node $node -----"
           kubectl drain $node --ignore-daemonsets --delete-emptydir-data --grace-period=30 --force
-        
+
           echo "----- Deleting node $node -----"
           kubectl delete node $node &
 
