@@ -152,7 +152,7 @@ jobs:
 
     - name: Scale karpenter to 0 in backoffice
       run: |
-        kubectl scale deployment karpenter--replicas=0 -n karpenter
+        kubectl scale deployment karpenter --replicas=0 -n karpenter
 
     - name: Wait for backoffice nodes to be deleted
       run: |
@@ -271,7 +271,7 @@ jobs:
 
     - name: Scale karpenter to 0 in Cloudspace
       run: |
-        kubectl scale deployment karpenter--replicas=0 -n karpenter
+        kubectl scale deployment karpenter --replicas=0 -n karpenter
 
     - name: Wait for Cloudspace nodes to be deleted
       run: |
