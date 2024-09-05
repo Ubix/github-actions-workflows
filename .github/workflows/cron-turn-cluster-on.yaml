@@ -1,0 +1,210 @@
+name: Turn Cluster on
+on:
+  workflow_call:
+    inputs:
+      environment-name:
+        required: true
+        type: string
+        description: "account name of the cluster to trigger the cluster automation workflow on. Choices are stg and prd"
+      runner:
+        required: false
+        type: string
+        default: "ubuntu-22.04"
+      repository:
+        required: false
+        type: string
+        default: "Ubix/ubix-deployments"
+      backoffice-role-to-assume:
+        required: true
+        type: string
+        description: "AWS IAM role to assume for AWS Backoffice EKS authentication"
+      cloudspace-role-to-assume:
+        required: true
+        type: string
+        description: "AWS IAM role to assume for AWS Cloudspace EKS authentication"
+      cloudspace-cluster-name:
+        required: true
+        type: string
+        description: "Name of the EKS Cloudspace cluster in AWS to authenticate to"
+      backoffice-cluster-name:
+        required: true
+        type: string
+        description: "Name of the EKS Backoffice cluster in AWS to authenticate to"
+    secrets:
+        token:
+            description: 'A token passed from the caller workflow'
+            required: false
+
+jobs:
+  automate-cluster-on:
+    runs-on: ${{ inputs.runner }}
+    steps:
+    
+    - name: Validate environment
+      run: |
+        if [ "${{ inputs.environment-name }}" != "stg" ] && [ "${{ inputs.environment-name }}" != "prd" ]; then
+          echo "Error: Unsupported environment name '${{ inputs.environment-name }}'. Supported values are 'stg' and 'prd'. Exiting."
+          exit 1
+        fi
+
+    - name: Checkout private tools
+      uses: actions/checkout@v3
+      with:
+        repository: ${{ inputs.repository }}
+        token: ${{ secrets.token }}
+        ref: main
+
+  ######################## BACKOFFICE #############################
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1-node16
+      with:
+        aws-region: us-east-1
+        role-to-assume: ${{ inputs.backoffice-role-to-assume }}
+        role-session-name: GithubActionsSession
+
+
+    - name: Configure Kubernetes client in Backoffice
+      uses: silverlyra/setup-aws-eks@v0.1
+      with:
+        cluster: ${{ inputs.backoffice-cluster-name }}
+
+    - name: Install yq
+      id: setup-yq
+      uses: shiipou/setup-yq-action@v2.2.0
+
+    - name: Scale argo-applicationset-controller to 1
+      run: |
+        kubectl scale deployment argocd-applicationset-controller --replicas=1 -n argocd
+
+    - name: Patch all nodepools in Backoffice and set karpenter replica to 2
+      run: |
+
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git config --global user.name "github-actions[bot]"
+
+        VALUES_FILE_PATH="backoffice/karpenter/karpenter/${{ inputs.environment-name }}"
+
+        cd $VALUES_FILE_PATH
+        
+        # patch karpenter replica
+        yq eval '.karpenter.replicas = 2' -i values.yaml
+
+        # Remove nodepool resources constraints
+        yq eval 'del(.karpenter-resources)' -i values.yaml
+
+        # Set default nodepool cpu to 100 and memory empty
+        yq eval '.karpenter-resources.nodePools.default.limits.cpu = "100"' -i values.yaml
+
+        # commit and push changes
+        git add $VALUES_FILE_PATH/values.yaml
+
+        git diff-index --quiet --cached HEAD || git commit -m "AUTO:Activate Karpenter replica and remove nodePool resources constraints in backoffice-${{ inputs.environment-name }}"
+        
+        git push
+
+    - name: Wait for backoffice nodes to be created and ready
+      run: |
+        echo "----- Waiting for all nodes to be created and ready -----"
+        nodes_status=$(kubectl get nodes -o wide)
+
+        nodes=$(echo "$nodes_status" | awk 'NR>1 {print $1}')
+        statuses=$(echo "$nodes_status" | awk 'NR>1 {print $2}')
+
+        all_nodes_ready=true
+
+        while read -r node status; do
+        echo "Checking node: $node"
+        
+        if [ "$status" != "Ready" ]; then
+            echo "Node $node is not in Ready state. Status: $status"
+            all_nodes_ready=false
+        else
+            echo "Node $node is healthy and Ready."
+        fi
+        done <<< "$(paste <(echo "$nodes") <(echo "$statuses"))"
+
+        if [ "$all_nodes_ready" = true ]; then
+            echo "All nodes in backoffice-${{ inputs.environment-name }} are created and healthy."
+        else
+            echo "Some nodes are not in a healthy state."
+        fi
+
+  ######################## CLOUDSPACE #############################
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1-node16
+      with:
+        aws-region: us-east-1
+        role-to-assume: ${{ inputs.cloudspace-role-to-assume }}
+        role-session-name: GithubActionsSession
+
+
+    - name: Configure Kubernetes client in Cloudspace
+      uses: silverlyra/setup-aws-eks@v0.1
+      with:
+        cluster: ${{ inputs.cloudspace-cluster-name }}
+
+
+    - name: Patch all nodepools in Cloudspace and set karpenter replica to 2
+      run: |
+
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git config --global user.name "github-actions[bot]"
+        
+        if [ "${{ inputs.environment-name }}" == "stg" ]; then
+          VALUES_FILE_PATH="cloudspace/overlays/stg/aws/stg-02/deployments/karpenter/karpenter"
+        elif [ "${{ inputs.environment-name }}" == "prd" ]; then
+          VALUES_FILE_PATH="cloudspace/overlays/prd/aws/master/deployments/karpenter/karpenter"
+        else
+          exit 1
+        fi
+
+        cd $VALUES_FILE_PATH
+        
+        # patch karpenter replica
+        yq eval '.karpenter.replicas = 2' -i values.yaml
+
+        # Remove nodepool resources constraints
+        yq eval 'del(.karpenter-resources)' -i values.yaml
+
+        # commit and push changes
+        git add $VALUES_FILE_PATH/values.yaml
+
+        git diff-index --quiet --cached HEAD || git commit -m "AUTO:Activate Karpenter replica and remove nodePool resources constraints in Cloudspace ${{ inputs.environment-name }}"
+        
+        git push
+
+        # commit and push changes
+        git add $VALUES_FILE_PATH/values.yaml
+
+        git diff-index --quiet --cached HEAD || git commit -m "AUTO:Set Karpenter replica to and nodePool resources to 0 in cloudspace ${{ inputs.environment-name }}"
+        
+        git push
+
+    - name: Wait for Cloudspace nodes to be created and ready
+      run: |
+        echo "----- Waiting for all nodes to be created and ready -----"
+        nodes_status=$(kubectl get nodes -o wide)
+
+        nodes=$(echo "$nodes_status" | awk 'NR>1 {print $1}')
+        statuses=$(echo "$nodes_status" | awk 'NR>1 {print $2}')
+
+        all_nodes_ready=true
+
+        while read -r node status; do
+        echo "Checking node: $node"
+        
+        if [ "$status" != "Ready" ]; then
+            echo "Node $node is not in Ready state. Status: $status"
+            all_nodes_ready=false
+        else
+            echo "Node $node is healthy and Ready."
+        fi
+        done <<< "$(paste <(echo "$nodes") <(echo "$statuses"))"
+
+        if [ "$all_nodes_ready" = true ]; then
+            echo "All nodes in Cloudspace ${{ inputs.environment-name }} are created and healthy."
+        else
+            echo "Some nodes are not in a healthy state."
+        fi

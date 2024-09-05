@@ -1,0 +1,280 @@
+name: Turn Cluster off
+on:
+  workflow_call:
+    inputs:
+      environment-name:
+        required: true
+        type: string
+        description: "account name of the cluster to trigger the cluster automation workflow off. Choices are stg and prd"
+      runner:
+        required: false
+        type: string
+        default: "ubuntu-22.04"
+      repository:
+        required: false
+        type: string
+        default: "Ubix/ubix-deployments"
+      backoffice-role-to-assume:
+        required: true
+        type: string
+        description: "AWS IAM role to assume for AWS Backoffice EKS authentication"
+      cloudspace-role-to-assume:
+        required: true
+        type: string
+        description: "AWS IAM role to assume for AWS Cloudspace EKS authentication"
+      cloudspace-cluster-name:
+        required: true
+        type: string
+        description: "Name of the EKS Cloudspace cluster in AWS to authenticate to"
+      backoffice-cluster-name:
+        required: true
+        type: string
+        description: "Name of the EKS Backoffice cluster in AWS to authenticate to"
+    secrets:
+        token:
+            description: 'A token passed from the caller workflow'
+            required: false
+
+jobs:
+  automate-cluster-off:
+    runs-on: ${{ inputs.runner }}
+    steps:
+
+    - name: Validate environment
+      run: |
+        if [ "${{ inputs.environment-name }}" != "stg" ] && [ "${{ inputs.environment-name }}" != "prd" ]; then
+          echo "Error: Unsupported environment name '${{ inputs.environment-name }}'. Supported values are 'stg' and 'prd'. Exiting."
+          exit 1
+        fi
+
+    - name: Checkout private tools
+      uses: actions/checkout@v3
+      with:
+        repository: ${{ inputs.repository }}
+        token: ${{ secrets.token }}
+        ref: main
+
+  ######################## BACKOFFICE #############################
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1-node16
+      with:
+        aws-region: us-east-1
+        role-to-assume: ${{ inputs.backoffice-role-to-assume }}
+        role-session-name: GithubActionsSession
+
+
+    - name: Configure Kubernetes client in Backoffice
+      uses: silverlyra/setup-aws-eks@v0.1
+      with:
+        cluster: ${{ inputs.backoffice-cluster-name }}
+
+    - name: Install yq
+      id: setup-yq
+      uses: shiipou/setup-yq-action@v2.2.0
+
+    - name: Scale argo-applicationset-controller to 0
+      run: |
+        kubectl scale deployment argocd-applicationset-controller --replicas=0 -n argocd
+
+    - name: Patch all nodepools in Backoffice and set karpenter replica to 0
+      run: |
+
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git config --global user.name "github-actions[bot]"
+
+        VALUES_FILE_PATH="backoffice/karpenter/karpenter/${{ inputs.environment-name }}"
+
+        cd $VALUES_FILE_PATH
+        
+        # patch karpenter replica
+        yq eval '.karpenter.replicas = 0' -i values.yaml
+
+        # set nodepooil resources to 0
+        yq eval '.karpenter-resources.nodePools.jobs.limits.memory = "0"' -i values.yaml
+        yq eval '.karpenter-resources.nodePools.jobs.limits.cpu = "0"' -i values.yaml
+
+        yq eval '.karpenter-resources.nodePools.databases.limits.memory = "0"' -i values.yaml
+        yq eval '.karpenter-resources.nodePools.databases.limits.cpu = "0"' -i values.yaml
+
+        yq eval '.karpenter-resources.nodePools.prometheus.limits.memory = "0"' -i values.yaml
+        yq eval '.karpenter-resources.nodePools.prometheus.limits.cpu = "0"' -i values.yaml
+
+        yq eval '.karpenter-resources.nodePools.mimir.limits.memory = "0"' -i values.yaml
+        yq eval '.karpenter-resources.nodePools.mimir.limits.cpu = "0"' -i values.yaml
+
+        yq eval '.karpenter-resources.nodePools.loki.limits.memory = "0"' -i values.yaml
+        yq eval '.karpenter-resources.nodePools.loki.limits.cpu = "0"' -i values.yaml
+
+        yq eval '.karpenter-resources.nodePools.default.limits.memory = "0"' -i values.yaml
+        yq eval '.karpenter-resources.nodePools.default.limits.cpu = "0"' -i values.yaml
+
+        yq eval '.karpenter-resources.nodePools.crossplane.limits.memory = "0"' -i values.yaml
+        yq eval '.karpenter-resources.nodePools.crossplane.limits.cpu = "0"' -i values.yaml
+
+        # commit and push changes
+        git add $VALUES_FILE_PATH/values.yaml
+
+        git diff-index --quiet --cached HEAD || git commit -m "AUTO:Set Karpenter replica to and nodePool resources to 0 in backoffice-${{ inputs.environment-name }}"
+        
+        git push
+
+    - name: Scale karpenter to 0 in backoffice
+      run: |
+        kubectl scale deployment karpenter--replicas=0 -n karpenter
+
+    - name: Delete Kyverno MutateWebHooks in backoffice
+      run: |
+        echo "Deleting Kyverno MutateWebhookConfigurations..."
+
+        kubectl get mutatingwebhookconfigurations -o name | grep kyverno | xargs kubectl delete
+    
+    - name: Drain Backoffice nodes and delete
+      run: |
+        cluster_name=$(kubectl config current-context)
+        nodes=$(kubectl get node -o wide --no-headers | grep -v 'fargate' | awk '{print $1}')
+        
+        for node in $nodes
+        do
+          echo "----- Draining node $node -----"
+          kubectl drain $node --ignore-daemonsets --delete-emptydir-data --grace-period=30 --force
+        
+          echo "----- Deleting node $node -----"
+          kubectl delete node $node &
+
+          sleep 3
+
+          echo "----- Deleting remaining non-replica pods on node $node -----"
+          kubectl get po -A -o custom-columns=NAME:.metadata.name,PARENT:".metadata.ownerReferences[].kind,NODE:.spec.nodeName,NAMESPACE:.metadata.namespace" | grep -v DaemonSet | grep $node | awk '{system("kubectl delete po " $1 " -n" $4)}'
+        done
+
+        echo "----- Finished deleting all nodes from $cluster_name cluster! -----"
+
+    - name: Force-remove LTM pods in Backoffice
+      run: |
+        echo "----- Removing LTM pods in Backoffice -----"
+        kubectl delete pod -n addons --force --grace-period=0 $(kubectl get pods -n addons | grep -E 'loki|mimir|tempo' | awk '{print $1}')
+
+    - name: Wait for backoffice nodes to be deleted
+      run: |
+        echo "----- Waiting for all nodes to be deleted -----"
+        while [ $(kubectl get nodes --no-headers | wc -l) -gt 0 ]; do
+          echo "Waiting for nodes to be deleted..."
+          sleep 10
+        done
+        echo "All backoffice-${{ inputs.environment-name }} nodes deleted successfully."
+
+  ######################## CLOUDSPACE #############################
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1-node16
+      with:
+        aws-region: us-east-1
+        role-to-assume: ${{ inputs.cloudspace-role-to-assume }}
+        role-session-name: GithubActionsSession
+
+
+    - name: Configure Kubernetes client in Cloudspace
+      uses: silverlyra/setup-aws-eks@v0.1
+      with:
+        cluster: ${{ inputs.cloudspace-cluster-name }}
+
+
+    - name: Patch all nodepools in Cloudspace and set karpenter replica to 0
+      run: |
+
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git config --global user.name "github-actions[bot]"f
+        
+        if [ "${{ inputs.environment-name }}" == "stg" ]; then
+          VALUES_FILE_PATH="cloudspace/overlays/stg/aws/stg-02/deployments/karpenter/karpenter"
+        elif [ "${{ inputs.environment-name }}" == "prd" ]; then
+          VALUES_FILE_PATH="cloudspace/overlays/prd/aws/master/deployments/karpenter/karpenter"
+        else
+          exit 1
+        fi
+
+        cd $VALUES_FILE_PATH
+        
+        # patch karpenter replica
+        yq eval '.karpenter.replicas = 0' -i values.yaml
+
+        # set nodepooil resources to 0
+        yq eval '.karpenter-resources.nodePools.jobs.limits.memory = "0"' -i values.yaml
+        yq eval '.karpenter-resources.nodePools.jobs.limits.cpu = "0"' -i values.yaml
+
+        yq eval '.karpenter-resources.nodePools.exec-service-python.limits.memory = "0"' -i values.yaml
+        yq eval '.karpenter-resources.nodePools.exec-service-python.limits.cpu = "0"' -i values.yaml
+
+        yq eval '.karpenter-resources.nodePools.ml-jobs.limits.memory = "0"' -i values.yaml
+        yq eval '.karpenter-resources.nodePools.ml-jobs.limits.cpu = "0"' -i values.yaml
+
+        yq eval '.karpenter-resources.nodePools.gpu.limits.memory = "0"' -i values.yaml
+        yq eval '.karpenter-resources.nodePools.gpu.limits.cpu = "0"' -i values.yaml
+
+        yq eval '.karpenter-resources.nodePools.databases.limits.memory = "0"' -i values.yaml
+        yq eval '.karpenter-resources.nodePools.databases.limits.cpu = "0"' -i values.yaml
+
+        yq eval '.karpenter-resources.nodePools.monitoring.limits.memory = "0"' -i values.yaml
+        yq eval '.karpenter-resources.nodePools.monitoring.limits.cpu = "0"' -i values.yaml
+
+        yq eval '.karpenter-resources.nodePools.operations.limits.memory = "0"' -i values.yaml
+        yq eval '.karpenter-resources.nodePools.operations.limits.cpu = "0"' -i values.yaml
+
+        yq eval '.karpenter-resources.nodePools.data-tooling.limits.memory = "0"' -i values.yaml
+        yq eval '.karpenter-resources.nodePools.data-tooling.limits.cpu = "0"' -i values.yaml
+
+        yq eval '.karpenter-resources.nodePools.platform.limits.memory = "0"' -i values.yaml
+        yq eval '.karpenter-resources.nodePools.platform.limits.cpu = "0"' -i values.yaml
+
+        yq eval '.karpenter-resources.nodePools.default.limits.memory = "0"' -i values.yaml
+        yq eval '.karpenter-resources.nodePools.default.limits.cpu = "0"' -i values.yaml
+
+        yq eval '.karpenter-resources.nodePools.trino.limits.memory = "0"' -i values.yaml
+        yq eval '.karpenter-resources.nodePools.trino.limits.cpu = "0"' -i values.yaml
+
+        # commit and push changes
+        git add $VALUES_FILE_PATH/values.yaml
+
+        git diff-index --quiet --cached HEAD || git commit -m "AUTO:Set Karpenter replica to and nodePool resources to 0 in cloudspace ${{ inputs.environment-name }}"
+        
+        git push
+
+    - name: Scale karpenter to 0 in Cloudspace
+      run: |
+        kubectl scale deployment karpenter--replicas=0 -n karpenter
+
+    - name: Delete Kyverno MutateWebHooks in Cloudspace
+      run: |
+        echo "Deleting Kyverno MutateWebhookConfigurations..."
+        kubectl get mutatingwebhookconfigurations -o name | grep kyverno | xargs kubectl delete
+    
+    - name: Drain Cloudspace nodes and delete
+      run: |
+        cluster_name=$(kubectl config current-context)
+        nodes=$(kubectl get node -o wide --no-headers | grep -v 'fargate' | awk '{print $1}')
+        
+        for node in $nodes
+        do
+          echo "----- Draining node $node -----"
+          kubectl drain $node --ignore-daemonsets --delete-emptydir-data --grace-period=30 --force
+        
+          echo "----- Deleting node $node -----"
+          kubectl delete node $node &
+
+          sleep 3
+
+          echo "----- Deleting remaining non-replica pods on node $node -----"
+          kubectl get po -A -o custom-columns=NAME:.metadata.name,PARENT:".metadata.ownerReferences[].kind,NODE:.spec.nodeName,NAMESPACE:.metadata.namespace" | grep -v DaemonSet | grep $node | awk '{system("kubectl delete po " $1 " -n" $4)}'
+        done
+
+        echo "----- Finished deleting all nodes from $cluster_name cluster! -----"
+
+    - name: Wait for Cloudspace nodes to be deleted
+      run: |
+        echo "----- Waiting for all nodes to be deleted -----"
+        while [ $(kubectl get nodes --no-headers | wc -l) -gt 0 ]; do
+          echo "Waiting for nodes to be deleted..."
+          sleep 10
+        done
+        echo "All Cloudspace ${{ inputs.environment-name }} nodes deleted successfully."
