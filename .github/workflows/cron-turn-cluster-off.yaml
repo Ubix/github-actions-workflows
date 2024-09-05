@@ -83,43 +83,84 @@ jobs:
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
         git config --global user.name "github-actions[bot]"
 
+        if [ "${{ inputs.environment-name }}" == "stg" ]; then
+          CLOUDSPACE_VALUES_FILE_PATH="cloudspace/overlays/stg/aws/stg-02/deployments/karpenter/karpenter"
+        elif [ "${{ inputs.environment-name }}" == "prd" ]; then
+          CLOUDSPACE_VALUES_FILE_PATH="cloudspace/overlays/prd/aws/master/deployments/karpenter/karpenter"
+        else
+          exit 1
+        fi
+
         ls
 
-        VALUES_FILE_PATH="backoffice/karpenter/karpenter/${{ inputs.environment-name }}"
+        BACKOFFICE_VALUES_FILE_PATH="backoffice/karpenter/karpenter/${{ inputs.environment-name }}"
 
         echo $VALUES_FILE_PATH
+        echo $CLOUDSPACE_VALUES_FILE_PATH
 
-        # cd $VALUES_FILE_PATH
+        # set backoffice nodepool resources to 0
+        yq eval '.karpenter-resources.nodePools.jobs.limits.memory = "0"' -i $BACKOFFICE_VALUES_FILE_PATH/values.yaml
+        yq eval '.karpenter-resources.nodePools.jobs.limits.cpu = "0"' -i $BACKOFFICE_VALUES_FILE_PATH/values.yaml
 
-        # patch karpenter replica
-        yq eval '.karpenter.replicas = 0' -i $VALUES_FILE_PATH/values.yaml
+        yq eval '.karpenter-resources.nodePools.databases.limits.memory = "0"' -i $BACKOFFICE_VALUES_FILE_PATH/values.yaml
+        yq eval '.karpenter-resources.nodePools.databases.limits.cpu = "0"' -i $BACKOFFICE_VALUES_FILE_PATH/values.yaml
 
-        # set nodepooil resources to 0
-        yq eval '.karpenter-resources.nodePools.jobs.limits.memory = "0"' -i $VALUES_FILE_PATH/values.yaml
-        yq eval '.karpenter-resources.nodePools.jobs.limits.cpu = "0"' -i $VALUES_FILE_PATH/values.yaml
+        yq eval '.karpenter-resources.nodePools.prometheus.limits.memory = "0"' -i $BACKOFFICE_VALUES_FILE_PATH/values.yaml
+        yq eval '.karpenter-resources.nodePools.prometheus.limits.cpu = "0"' -i $BACKOFFICE_VALUES_FILE_PATH/values.yaml
 
-        yq eval '.karpenter-resources.nodePools.databases.limits.memory = "0"' -i $VALUES_FILE_PATH/values.yaml
-        yq eval '.karpenter-resources.nodePools.databases.limits.cpu = "0"' -i $VALUES_FILE_PATH/values.yaml
+        yq eval '.karpenter-resources.nodePools.mimir.limits.memory = "0"' -i $BACKOFFICE_VALUES_FILE_PATH/values.yaml
+        yq eval '.karpenter-resources.nodePools.mimir.limits.cpu = "0"' -i $BACKOFFICE_VALUES_FILE_PATH/values.yaml
 
-        yq eval '.karpenter-resources.nodePools.prometheus.limits.memory = "0"' -i $VALUES_FILE_PATH/values.yaml
-        yq eval '.karpenter-resources.nodePools.prometheus.limits.cpu = "0"' -i $VALUES_FILE_PATH/values.yaml
+        yq eval '.karpenter-resources.nodePools.loki.limits.memory = "0"' -i $BACKOFFICE_VALUES_FILE_PATH/values.yaml
+        yq eval '.karpenter-resources.nodePools.loki.limits.cpu = "0"' -i $BACKOFFICE_VALUES_FILE_PATH/values.yaml
 
-        yq eval '.karpenter-resources.nodePools.mimir.limits.memory = "0"' -i $VALUES_FILE_PATH/values.yaml
-        yq eval '.karpenter-resources.nodePools.mimir.limits.cpu = "0"' -i $VALUES_FILE_PATH/values.yaml
+        yq eval '.karpenter-resources.nodePools.default.limits.memory = "0"' -i $BACKOFFICE_VALUES_FILE_PATH/values.yaml
+        yq eval '.karpenter-resources.nodePools.default.limits.cpu = "0"' -i $BACKOFFICE_VALUES_FILE_PATH/values.yaml
 
-        yq eval '.karpenter-resources.nodePools.loki.limits.memory = "0"' -i $VALUES_FILE_PATH/values.yaml
-        yq eval '.karpenter-resources.nodePools.loki.limits.cpu = "0"' -i $VALUES_FILE_PATH/values.yaml
+        yq eval '.karpenter-resources.nodePools.crossplane.limits.memory = "0"' -i $BACKOFFICE_VALUES_FILE_PATH/values.yaml
+        yq eval '.karpenter-resources.nodePools.crossplane.limits.cpu = "0"' -i $BACKOFFICE_VALUES_FILE_PATH/values.yaml
 
-        yq eval '.karpenter-resources.nodePools.default.limits.memory = "0"' -i $VALUES_FILE_PATH/values.yaml
-        yq eval '.karpenter-resources.nodePools.default.limits.cpu = "0"' -i $VALUES_FILE_PATH/values.yaml
+        # set cloudspace nodepool resources to 0
+        yq eval '.karpenter-resources.nodePools.jobs.limits.memory = "0"' -i $CLOUDSPACE_VALUES_FILE_PATH/values.yaml
+        yq eval '.karpenter-resources.nodePools.jobs.limits.cpu = "0"' -i $CLOUDSPACE_VALUES_FILE_PATH/values.yaml
 
-        yq eval '.karpenter-resources.nodePools.crossplane.limits.memory = "0"' -i $VALUES_FILE_PATH/values.yaml
-        yq eval '.karpenter-resources.nodePools.crossplane.limits.cpu = "0"' -i $VALUES_FILE_PATH/values.yaml
+        yq eval '.karpenter-resources.nodePools.ingestion-jobs.limits.memory = "0"' -i $CLOUDSPACE_VALUES_FILE_PATH/values.yaml
+        yq eval '.karpenter-resources.nodePools.ingestion-jobs.limits.cpu = "0"' -i $CLOUDSPACE_VALUES_FILE_PATH/values.yaml
+
+        yq eval '.karpenter-resources.nodePools.exec-service-python.limits.memory = "0"' -i $CLOUDSPACE_VALUES_FILE_PATH/values.yaml
+        yq eval '.karpenter-resources.nodePools.exec-service-python.limits.cpu = "0"' -i $CLOUDSPACE_VALUES_FILE_PATH/values.yaml
+
+        yq eval '.karpenter-resources.nodePools.ml-jobs.limits.memory = "0"' -i $CLOUDSPACE_VALUES_FILE_PATH/values.yaml
+        yq eval '.karpenter-resources.nodePools.ml-jobs.limits.cpu = "0"' -i $CLOUDSPACE_VALUES_FILE_PATH/values.yaml
+
+        yq eval '.karpenter-resources.nodePools.gpu.limits.memory = "0"' -i $CLOUDSPACE_VALUES_FILE_PATH/values.yaml
+        yq eval '.karpenter-resources.nodePools.gpu.limits.cpu = "0"' -i $CLOUDSPACE_VALUES_FILE_PATH/values.yaml
+
+        yq eval '.karpenter-resources.nodePools.databases.limits.memory = "0"' -i $CLOUDSPACE_VALUES_FILE_PATH/values.yaml
+        yq eval '.karpenter-resources.nodePools.databases.limits.cpu = "0"' -i $CLOUDSPACE_VALUES_FILE_PATH/values.yaml
+
+        yq eval '.karpenter-resources.nodePools.monitoring.limits.memory = "0"' -i $CLOUDSPACE_VALUES_FILE_PATH/values.yaml
+        yq eval '.karpenter-resources.nodePools.monitoring.limits.cpu = "0"' -i $CLOUDSPACE_VALUES_FILE_PATH/values.yaml
+
+        yq eval '.karpenter-resources.nodePools.operations.limits.memory = "0"' -i $CLOUDSPACE_VALUES_FILE_PATH/values.yaml
+        yq eval '.karpenter-resources.nodePools.operations.limits.cpu = "0"' -i $CLOUDSPACE_VALUES_FILE_PATH/values.yaml
+
+        yq eval '.karpenter-resources.nodePools.data-tooling.limits.memory = "0"' -i $CLOUDSPACE_VALUES_FILE_PATH/values.yaml
+        yq eval '.karpenter-resources.nodePools.data-tooling.limits.cpu = "0"' -i $CLOUDSPACE_VALUES_FILE_PATH/values.yaml
+
+        yq eval '.karpenter-resources.nodePools.platform.limits.memory = "0"' -i $CLOUDSPACE_VALUES_FILE_PATH/values.yaml
+        yq eval '.karpenter-resources.nodePools.platform.limits.cpu = "0"' -i $CLOUDSPACE_VALUES_FILE_PATH/values.yaml
+
+        yq eval '.karpenter-resources.nodePools.default.limits.memory = "0"' -i $CLOUDSPACE_VALUES_FILE_PATH/values.yaml
+        yq eval '.karpenter-resources.nodePools.default.limits.cpu = "0"' -i $CLOUDSPACE_VALUES_FILE_PATH/values.yaml
+
+        yq eval '.karpenter-resources.nodePools.trino.limits.memory = "0"' -i $CLOUDSPACE_VALUES_FILE_PATH/values.yaml
+        yq eval '.karpenter-resources.nodePools.trino.limits.cpu = "0"' -i $CLOUDSPACE_VALUES_FILE_PATH/values.yaml
 
         # commit and push changes
-        git add $VALUES_FILE_PATH/values.yaml
+        git add $CLOUDSPACE_VALUES_FILE_PATH/values.yaml $BACKOFFICE_VALUES_FILE_PATH/values.yaml
 
-        git diff-index --quiet --cached HEAD || git commit -m "AUTO:Set Karpenter replica to and nodePool resources to 0 in backoffice-${{ inputs.environment-name }}"
+        git diff-index --quiet --cached HEAD || git commit -m "AUTO:Set Karpenter replica to and nodePool resources to 0 in ${{ inputs.environment-name }}"
 
         git push
 
@@ -179,72 +220,10 @@ jobs:
       with:
         cluster: ${{ inputs.cloudspace-cluster-name }}
 
-
-    - name: Patch all nodepools in Cloudspace and set karpenter replica to 0
-      run: |
-
-        git config --global user.email "github-actions[bot]@users.noreply.github.com"
-        git config --global user.name "github-actions[bot]"f
-
-        if [ "${{ inputs.environment-name }}" == "stg" ]; then
-          VALUES_FILE_PATH="cloudspace/overlays/stg/aws/stg-02/deployments/karpenter/karpenter"
-        elif [ "${{ inputs.environment-name }}" == "prd" ]; then
-          VALUES_FILE_PATH="cloudspace/overlays/prd/aws/master/deployments/karpenter/karpenter"
-        else
-          exit 1
-        fi
-
-        # patch karpenter replica
-        yq eval '.karpenter.replicas = 0' -i $VALUES_FILE_PATH/values.yaml
-
-        # set nodepooil resources to 0
-        yq eval '.karpenter-resources.nodePools.jobs.limits.memory = "0"' -i $VALUES_FILE_PATH/values.yaml
-        yq eval '.karpenter-resources.nodePools.jobs.limits.cpu = "0"' -i $VALUES_FILE_PATH/values.yaml
-
-        yq eval '.karpenter-resources.nodePools.ingestion-jobs.limits.memory = "0"' -i $VALUES_FILE_PATH/values.yaml
-        yq eval '.karpenter-resources.nodePools.ingestion-jobs.limits.cpu = "0"' -i $VALUES_FILE_PATH/values.yaml
-
-        yq eval '.karpenter-resources.nodePools.exec-service-python.limits.memory = "0"' -i $VALUES_FILE_PATH/values.yaml
-        yq eval '.karpenter-resources.nodePools.exec-service-python.limits.cpu = "0"' -i $VALUES_FILE_PATH/values.yaml
-
-        yq eval '.karpenter-resources.nodePools.ml-jobs.limits.memory = "0"' -i $VALUES_FILE_PATH/values.yaml
-        yq eval '.karpenter-resources.nodePools.ml-jobs.limits.cpu = "0"' -i $VALUES_FILE_PATH/values.yaml
-
-        yq eval '.karpenter-resources.nodePools.gpu.limits.memory = "0"' -i $VALUES_FILE_PATH/values.yaml
-        yq eval '.karpenter-resources.nodePools.gpu.limits.cpu = "0"' -i $VALUES_FILE_PATH/values.yaml
-
-        yq eval '.karpenter-resources.nodePools.databases.limits.memory = "0"' -i $VALUES_FILE_PATH/values.yaml
-        yq eval '.karpenter-resources.nodePools.databases.limits.cpu = "0"' -i $VALUES_FILE_PATH/values.yaml
-
-        yq eval '.karpenter-resources.nodePools.monitoring.limits.memory = "0"' -i $VALUES_FILE_PATH/values.yaml
-        yq eval '.karpenter-resources.nodePools.monitoring.limits.cpu = "0"' -i $VALUES_FILE_PATH/values.yaml
-
-        yq eval '.karpenter-resources.nodePools.operations.limits.memory = "0"' -i $VALUES_FILE_PATH/values.yaml
-        yq eval '.karpenter-resources.nodePools.operations.limits.cpu = "0"' -i $VALUES_FILE_PATH/values.yaml
-
-        yq eval '.karpenter-resources.nodePools.data-tooling.limits.memory = "0"' -i $VALUES_FILE_PATH/values.yaml
-        yq eval '.karpenter-resources.nodePools.data-tooling.limits.cpu = "0"' -i $VALUES_FILE_PATH/values.yaml
-
-        yq eval '.karpenter-resources.nodePools.platform.limits.memory = "0"' -i $VALUES_FILE_PATH/values.yaml
-        yq eval '.karpenter-resources.nodePools.platform.limits.cpu = "0"' -i $VALUES_FILE_PATH/values.yaml
-
-        yq eval '.karpenter-resources.nodePools.default.limits.memory = "0"' -i $VALUES_FILE_PATH/values.yaml
-        yq eval '.karpenter-resources.nodePools.default.limits.cpu = "0"' -i $VALUES_FILE_PATH/values.yaml
-
-        yq eval '.karpenter-resources.nodePools.trino.limits.memory = "0"' -i $VALUES_FILE_PATH/values.yaml
-        yq eval '.karpenter-resources.nodePools.trino.limits.cpu = "0"' -i $VALUES_FILE_PATH/values.yaml
-
-        # commit and push changes
-        git add $VALUES_FILE_PATH/values.yaml
-
-        git diff-index --quiet --cached HEAD || git commit -m "AUTO:Set Karpenter replica to and nodePool resources to 0 in cloudspace ${{ inputs.environment-name }}"
-
-        git push
-
     - name: Delete Kyverno MutateWebHooks in Cloudspace
       run: |
         echo "Deleting Kyverno MutateWebhookConfigurations..."
-        kubectl get mutatingwebhookconfigurations -o name | grep kyverno | xargs kubectl delete
+        kubectl get mutatingwebhookconfigurations -o name | grep kyverno | xargs kubectl delete || echo "All kyverno mutating webhooks are already deleted"
 
     - name: Drain Cloudspace nodes and delete
       run: |
@@ -254,7 +233,7 @@ jobs:
         for node in $nodes
         do
           echo "----- Draining node $node -----"
-          kubectl drain $node --ignore-daemonsets --delete-emptydir-data --grace-period=30 --force
+          kubectl drain $node --ignore-daemonsets --delete-emptydir-data --grace-period=30 --force &
 
           echo "----- Deleting node $node -----"
           kubectl delete node $node &
