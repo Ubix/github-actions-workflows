@@ -127,7 +127,7 @@ jobs:
       run: |
         echo "Deleting Kyverno MutateWebhookConfigurations..."
 
-        kubectl get mutatingwebhookconfigurations -o name | grep kyverno | xargs kubectl delete
+        kubectl get mutatingwebhookconfigurations -o name | grep kyverno | xargs kubectl delete || echo "All kyverno mutating webhooks are already deleted"
 
     - name: Drain Backoffice nodes and delete
       run: |
