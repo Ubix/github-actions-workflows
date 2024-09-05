@@ -91,6 +91,8 @@ jobs:
 
         VALUES_FILE_PATH="backoffice/karpenter/karpenter/${{ inputs.environment-name }}"
 
+        echo $VALUES_FILE_PATH
+
         cd $VALUES_FILE_PATH
 
         # patch karpenter replica
