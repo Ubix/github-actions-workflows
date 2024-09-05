@@ -31,12 +31,16 @@ on:
         type: string
         description: "Name of the EKS Backoffice cluster in AWS to authenticate to"
     secrets:
-        token:
-            description: 'A token passed from the caller workflow'
-            required: false
+      token:
+        description: 'A token passed from the caller workflow'
+        required: false
 
 jobs:
   automate-cluster-off:
+    name: Turn-Off Cluster
+    permissions:
+      id-token: write
+      contents: write
     runs-on: ${{ inputs.runner }}
     steps:
 
