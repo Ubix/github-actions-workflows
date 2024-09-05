@@ -194,8 +194,6 @@ jobs:
           exit 1
         fi
 
-        cd $VALUES_FILE_PATH
-
         # patch karpenter replica
         yq eval '.karpenter.replicas = 0' -i $VALUES_FILE_PATH/values.yaml
 
