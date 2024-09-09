@@ -87,21 +87,19 @@ jobs:
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
         git config --global user.name "github-actions[bot]"
 
-        VALUES_FILE_PATH="backoffice/karpenter/karpenter/${{ inputs.environment-name }}"
-
-        cd $VALUES_FILE_PATH
+        BACKOFFICE_VALUES_FILE_PATH="backoffice/karpenter/karpenter/${{ inputs.environment-name }}"
         
         # patch karpenter replica
-        yq eval '.karpenter.replicas = 2' -i values.yaml
+        yq eval '.karpenter.replicas = 2' -i $BACKOFFICE_VALUES_FILE_PATH/values.yaml
 
         # Remove nodepool resources constraints
-        yq eval 'del(.karpenter-resources)' -i values.yaml
+        yq eval 'del(.karpenter-resources)' -i $BACKOFFICE_VALUES_FILE_PATH/values.yaml
 
         # Set default nodepool cpu to 100 and memory empty
-        yq eval '.karpenter-resources.nodePools.default.limits.cpu = "100"' -i values.yaml
+        yq eval '.karpenter-resources.nodePools.default.limits.cpu = "100"' -i $BACKOFFICE_VALUES_FILE_PATH/values.yaml
 
         # commit and push changes
-        git add $VALUES_FILE_PATH/values.yaml
+        git add $BACKOFFICE_VALUES_FILE_PATH/values.yaml
 
         git diff-index --quiet --cached HEAD || git commit -m "AUTO:Activate Karpenter replica and remove nodePool resources constraints in backoffice-${{ inputs.environment-name }}"
         
@@ -157,34 +155,27 @@ jobs:
         git config --global user.name "github-actions[bot]"
         
         if [ "${{ inputs.environment-name }}" == "stg" ]; then
-          VALUES_FILE_PATH="cloudspace/overlays/stg/aws/stg-02/deployments/karpenter/karpenter"
+          CLOUDSPACE_VALUES_FILE_PATH="cloudspace/overlays/stg/aws/stg-02/deployments/karpenter/karpenter"
         elif [ "${{ inputs.environment-name }}" == "prd" ]; then
-          VALUES_FILE_PATH="cloudspace/overlays/prd/aws/master/deployments/karpenter/karpenter"
+          CLOUDSPACE_VALUES_FILE_PATH="cloudspace/overlays/prd/aws/master/deployments/karpenter/karpenter"
         else
           exit 1
         fi
-
-        cd $VALUES_FILE_PATH
         
         # patch karpenter replica
-        yq eval '.karpenter.replicas = 2' -i values.yaml
+        yq eval '.karpenter.replicas = 2' -i $CLOUDSPACE_VALUES_FILE_PATH/values.yaml
 
         # Remove nodepool resources constraints
-        yq eval 'del(.karpenter-resources)' -i values.yaml
+        yq eval 'del(.karpenter-resources)' -i $CLOUDSPACE_VALUES_FILE_PATH/values.yaml
 
         # commit and push changes
-        git add $VALUES_FILE_PATH/values.yaml
+        git add $CLOUDSPACE_VALUES_FILE_PATH/values.yaml
 
         git diff-index --quiet --cached HEAD || git commit -m "AUTO:Activate Karpenter replica and remove nodePool resources constraints in Cloudspace ${{ inputs.environment-name }}"
         
         git push
 
-        # commit and push changes
-        git add $VALUES_FILE_PATH/values.yaml
 
-        git diff-index --quiet --cached HEAD || git commit -m "AUTO:Set Karpenter replica to and nodePool resources to 0 in cloudspace ${{ inputs.environment-name }}"
-        
-        git push
 
     - name: Wait for Cloudspace nodes to be created and ready
       run: |
