@@ -77,10 +77,6 @@ jobs:
       id: setup-yq
       uses: shiipou/setup-yq-action@v2.2.0
 
-    - name: Scale argo-applicationset-controller to 1
-      run: |
-        kubectl scale deployment argocd-applicationset-controller --replicas=1 -n argocd
-
     - name: Patch all nodepools in Backoffice and set karpenter replica to 2
       run: |
 
