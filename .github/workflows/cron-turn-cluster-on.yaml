@@ -116,7 +116,9 @@ jobs:
 
         kubectl get mutatingwebhookconfigurations -o name | grep kyverno | xargs kubectl delete
 
-        helm template karpenter $BACKOFFICE_VALUES_FILE_PATH -f $BACKOFFICE_VALUES_FILE_PATH/values.yaml -f $BACKOFFICE_BASE_FILE_PATH/values.yaml | kubectl apply -f - -n karpenter
+        helm template karpenter $BACKOFFICE_VALUES_FILE_PATH -f $BACKOFFICE_VALUES_FILE_PATH/values.yaml -f $BACKOFFICE_BASE_FILE_PATH/values.yaml > karpenter-output.yaml
+
+        kubectl apply -f karpenter-output.yaml -n karpenter
 
         MEMORY_EXISTS=$(kubectl get nodepool.karpenter.sh default -o json | jq '.spec.limits.memory')
 
