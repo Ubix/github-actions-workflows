@@ -101,7 +101,7 @@ jobs:
       run: |
         kubectl get mutatingwebhookconfigurations -o name | grep kyverno | xargs kubectl delete
 
-    - name: Bbackoffice Karpenter and default nodepool patch
+    - name: Backoffice Karpenter and default nodepool patch
       run: |
         kubectl patch deployment karpenter -n karpenter --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 2}]'
 
