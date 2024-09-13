@@ -85,45 +85,29 @@ jobs:
 
         BACKOFFICE_VALUES_FILE_PATH="backoffice/karpenter/karpenter/${{ inputs.environment-name }}"
         
-        # patch karpenter replica
         yq eval '.karpenter.replicas = 2' -i $BACKOFFICE_VALUES_FILE_PATH/values.yaml
 
-        # Remove nodepool resources constraints
         yq eval 'del(.karpenter-resources.nodePools)' -i $BACKOFFICE_VALUES_FILE_PATH/values.yaml
 
-        # Set default nodepool cpu to 100 and memory empty
         yq eval '.karpenter-resources.nodePools.default.limits.cpu = "100"' -i $BACKOFFICE_VALUES_FILE_PATH/values.yaml
 
-        # commit and push changes
         git add $BACKOFFICE_VALUES_FILE_PATH/values.yaml
 
         git diff-index --quiet --cached HEAD || git commit -m "AUTO:Activate Karpenter replica and remove nodePool resources constraints in backoffice-${{ inputs.environment-name }}"
         
         git push
   
+    - name: Delete Backoffice kyverno mutatingwebhookconfigurations
+      run: |
+        kubectl get mutatingwebhookconfigurations -o name | grep kyverno | xargs kubectl delete
 
-    # - name: Helm template and karpenter apply
-    #   run: |
-    #     BACKOFFICE_VALUES_FILE_PATH="backoffice/karpenter/karpenter/${{ inputs.environment-name }}"
-        
-    #     BACKOFFICE_BASE_FILE_PATH="backoffice/karpenter/karpenter"
+    - name: Backoffice Karpenter and default nodepool patch
+      run: |
+        kubectl patch deployment karpenter -n karpenter --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 2}]'
 
-    #     helm dependency build $BACKOFFICE_VALUES_FILE_PATH
+        kubectl patch nodepool.karpenter.sh default --type=json -p='[{"op": "remove", "path": "/spec/limits/memory"}]'
 
-    #     kubectl get mutatingwebhookconfigurations -o name | grep kyverno | xargs kubectl delete
-
-    #     helm template karpenter $BACKOFFICE_VALUES_FILE_PATH -f $BACKOFFICE_VALUES_FILE_PATH/values.yaml -f $BACKOFFICE_BASE_FILE_PATH/values.yaml > karpenter-output.yaml
-
-    #     kubectl apply -f karpenter-output.yaml -n karpenter
-
-    #     MEMORY_EXISTS=$(kubectl get nodepool.karpenter.sh default -o json | jq '.spec.limits.memory')
-
-    #     if [ "$MEMORY_EXISTS" != "null" ]; then
-    #       echo "Memory field found. Removing..."
-    #       kubectl patch nodepool.karpenter.sh default --type=json -p='[{"op": "remove", "path": "/spec/limits/memory"}]'
-    #     else
-    #       echo "Memory field not found. No patch needed."
-    #     fi
+        kubectl patch nodepool.karpenter.sh default --type=json -p='[{"op": "replace", "path": "/spec/limits/cpu", "value": 100}]'
 
     - name: Wait for backoffice nodes to be created and ready
       run: |
