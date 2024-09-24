@@ -1,0 +1,67 @@
+name: Turn GCP Cluster on
+on:
+  workflow_call:
+    inputs:
+      gcp-cluster-name:
+        required: true
+        type: string
+        description: "name of the GCP cluster to trigger the cluster automation workflow on. i.e master-gcp-01"
+      runner:
+        required: false
+        type: string
+        default: "ubuntu-22.04"
+      repository:
+        required: false
+        type: string
+        default: "Ubix/ubix-deployments"
+    secrets:
+      token:
+        description: 'A token passed from the caller workflow'
+        required: false
+
+jobs:
+  automate-cluster-on:
+    name: Turn-on GCP Cluster
+    permissions:
+      id-token: write
+      contents: write
+    runs-on: ${{ inputs.runner }}
+    steps:
+    
+    - name: Validate GCP Cluster Name
+      run: |
+        if [ "${{ inputs.gcp-cluster-name }}" != "master-gcp-01" ]; then
+          echo "Error: Unsupported GCP cluster name name '${{ inputs.gcp-cluster-name }}'. Supported values are 'master-gcp-01'. Exiting."
+          exit 1
+        fi
+
+    - name: Checkout private tools
+      uses: actions/checkout@v3
+      with:
+        repository: ${{ inputs.repository }}
+        token: ${{ secrets.token }}
+        ref: main
+
+    - name: Install yq
+      id: setup-yq
+      uses: shiipou/setup-yq-action@v2.2.0
+
+    - name: Enable NAP and Set Resource Limits in GCP Cloudspace
+      run: |
+
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git config --global user.name "github-actions[bot]"
+
+        CLOUDSPACE_VALUES_FILE_PATH="cloudspace/overlays/new-dev/gcp/${{ inputs.gcp-cluster-name }}/account"
+        
+        yq eval '.account.spec.gke.enableNAP = true' -i $CLOUDSPACE_VALUES_FILE_PATH/values.yaml
+
+
+        yq eval '.account.spec.gke.resourceLimits = [{"maximum": 1024, "resourceType": "cpu"}, {"maximum": 2048, "resourceType": "memory"}, {"maximum": 16, "resourceType": "nvidia-tesla-t4"}]' -i $CLOUDSPACE_VALUES_FILE_PATH/values.yaml
+
+
+        git add $CLOUDSPACE_VALUES_FILE_PATH/values.yaml
+
+        git diff-index --quiet --cached HEAD || git commit -m "AUTO: Enabled NAP and set Resource Limits in ${{ inputs.gcp-cluster-name }}"
+        
+        git push

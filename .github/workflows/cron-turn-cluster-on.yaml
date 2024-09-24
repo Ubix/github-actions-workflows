@@ -1,4 +1,4 @@
-name: Turn Cluster on
+name: Turn AWS Cluster on 
 on:
   workflow_call:
     inputs:
