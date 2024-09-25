@@ -76,10 +76,10 @@ jobs:
 
     - name: Remove all nodepools in GKE
       run: |
-        nodepools=$(gcloud container node-pools list --cluster master-gcp-01 --region us-east4 | grep -v NAME | awk '{print$1}')
+        nodepools=$(gcloud container node-pools list --cluster ${{ inputs.gcp-cluster-name }} --region us-east4 --project ${{ inputs.gcp-cluster-name }} | grep -v NAME | awk '{print$1}')
 
         for np in $nodepools
         do
           echo "------ Deleting $np nodepool -------"
-          gcloud container node-pools delete $np --cluster master-gcp-01 --region us-east4 -q --async
+          gcloud container node-pools delete $np --cluster ${{ inputs.gcp-cluster-name }} --region us-east4 --project ${{ inputs.gcp-cluster-name }} -q --async
         done
