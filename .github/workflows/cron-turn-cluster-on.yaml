@@ -99,7 +99,7 @@ jobs:
   
     - name: Delete Backoffice kyverno mutatingwebhookconfigurations
       run: |
-        kubectl get mutatingwebhookconfigurations -o name | grep kyverno | xargs kubectl delete
+        kubectl get mutatingwebhookconfigurations -o name | grep kyverno | xargs -r kubectl delete
 
     - name: Backoffice Karpenter and default nodepool patch
       run: |
