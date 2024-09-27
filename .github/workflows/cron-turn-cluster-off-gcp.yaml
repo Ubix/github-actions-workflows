@@ -81,5 +81,5 @@ jobs:
         for np in $nodepools
         do
           echo "------ Deleting $np nodepool -------"
-          gcloud container node-pools delete $np --cluster ${{ inputs.gcp-cluster-name }} --region us-east4 --project ${{ inputs.gcp-cluster-name }} -q --async
+          gcloud container node-pools delete $np --cluster ${{ inputs.gcp-cluster-name }} --region us-east4 --project ${{ inputs.gcp-cluster-name }} -q
         done
