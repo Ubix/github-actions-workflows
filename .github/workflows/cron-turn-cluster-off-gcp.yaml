@@ -84,7 +84,7 @@ jobs:
 
           delete_nodepool() {
             local nodepool=$1
-            local retries=5
+            local retries=10
             local count=0
             local success=false
 
@@ -97,7 +97,7 @@ jobs:
                 break
               else
                 echo "------ Failed to delete $nodepool nodepool. Retrying in 30 seconds... -------"
-                sleep 30
+                sleep 60
                 count=$((count+1))
               fi
             done
