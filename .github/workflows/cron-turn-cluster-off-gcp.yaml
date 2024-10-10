@@ -110,3 +110,16 @@ jobs:
           for np in $nodepools; do
             delete_nodepool $np
           done
+
+          
+          nodepools=$(gcloud container node-pools list --cluster $GCP_CLUSTER_NAME --region $GCP_REGION --project $GCP_PROJECT | grep -v NAME | awk '{print$1}')
+
+          if [ -n "$nodepools" ]; then
+            for np in $nodepools
+            do
+              echo "------ Deleting $np nodepool -------"
+              gcloud container node-pools delete $np --cluster $GCP_CLUSTER_NAME --region $GCP_REGION --project $GCP_PROJECT -q --async
+            done
+          else
+            echo "No remaining node pools to delete."
+          fi
