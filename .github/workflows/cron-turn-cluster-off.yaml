@@ -95,10 +95,9 @@ jobs:
 
         BACKOFFICE_VALUES_FILE_PATH="backoffice/karpenter/karpenter/${{ inputs.environment-name }}"
 
-        echo $VALUES_FILE_PATH
-        echo $CLOUDSPACE_VALUES_FILE_PATH
+        yq eval '.karpenter.replicas = 0' -i $BACKOFFICE_VALUES_FILE_PATH/values.yaml
+        yq eval '.karpenter.replicas = 0' -i $CLOUDSPACE_VALUES_FILE_PATH/values.yaml
 
-        # set backoffice nodepool resources to 0
         yq eval '.karpenter-resources.nodePools.jobs.limits.memory = "0"' -i $BACKOFFICE_VALUES_FILE_PATH/values.yaml
         yq eval '.karpenter-resources.nodePools.jobs.limits.cpu = "0"' -i $BACKOFFICE_VALUES_FILE_PATH/values.yaml
 
@@ -119,6 +118,9 @@ jobs:
 
         yq eval '.karpenter-resources.nodePools.crossplane.limits.memory = "0"' -i $BACKOFFICE_VALUES_FILE_PATH/values.yaml
         yq eval '.karpenter-resources.nodePools.crossplane.limits.cpu = "0"' -i $BACKOFFICE_VALUES_FILE_PATH/values.yaml
+
+        yq eval '.karpenter-resources.nodePools.argo.limits.memory = "0"' -i $BACKOFFICE_VALUES_FILE_PATH/values.yaml
+        yq eval '.karpenter-resources.nodePools.argo.limits.cpu = "0"' -i $BACKOFFICE_VALUES_FILE_PATH/values.yaml
 
         # set cloudspace nodepool resources to 0
         yq eval '.karpenter-resources.nodePools.jobs.limits.memory = "0"' -i $CLOUDSPACE_VALUES_FILE_PATH/values.yaml
