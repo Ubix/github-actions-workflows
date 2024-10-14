@@ -109,6 +109,10 @@ jobs:
 
         kubectl patch nodepool.karpenter.sh default --type=json -p='[{"op": "replace", "path": "/spec/limits/cpu", "value": 100}]'
 
+        kubectl patch nodepool.karpenter.sh argo --type=json -p='[{"op": "remove", "path": "/spec/limits/memory"}]'
+
+        kubectl patch nodepool.karpenter.sh argo --type=json -p='[{"op": "replace", "path": "/spec/limits/cpu", "value": 100}]'
+
     - name: Wait for backoffice nodes to be created and ready
       run: |
         echo "----- Waiting for all nodes to be created and ready -----"
