@@ -40,6 +40,9 @@ on:
         required: false
         type: string
         default: "linux/amd64"
+      docker-build-secrets:
+        required: false
+        type: string
     secrets:
       AUTH_HEADER:
         description: 'Header used to authenticate in Defect Dojo'
@@ -110,6 +113,8 @@ jobs:
           platforms: ${{ inputs.docker-build-platforms }}
           context: .
           push: true
+          secrets: |
+            ${{ inputs.docker-build-secrets }}
           build-args: |
             ${{ inputs.build-args }}
           file: "${{ inputs.dockerfile-path }}/Dockerfile"
