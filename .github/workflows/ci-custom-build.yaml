@@ -40,12 +40,11 @@ on:
         required: false
         type: string
         default: "linux/amd64"
-      docker-build-secrets:
-        required: false
-        type: string
     secrets:
       AUTH_HEADER:
         description: 'Header used to authenticate in Defect Dojo'
+        required: false
+      GH_TOKEN:
         required: false
     outputs:
       tag:
@@ -114,7 +113,7 @@ jobs:
           context: .
           push: true
           secrets: |
-            ${{ inputs.docker-build-secrets }}
+            "github_token=${{ secrets.GITHUB_TOKEN }}" 
           build-args: |
             ${{ inputs.build-args }}
           file: "${{ inputs.dockerfile-path }}/Dockerfile"
