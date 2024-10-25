@@ -113,7 +113,7 @@ jobs:
           context: .
           push: true
           secrets: |
-            "github_token=${{ secrets.GITHUB_TOKEN }}" 
+            "github_token=${{ secrets.GH_TOKEN }}" 
           build-args: |
             ${{ inputs.build-args }}
           file: "${{ inputs.dockerfile-path }}/Dockerfile"
