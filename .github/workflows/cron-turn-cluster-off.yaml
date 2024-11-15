@@ -197,14 +197,14 @@ jobs:
       run: |
         kubectl scale deployment karpenter --replicas=0 -n karpenter
 
-    - name: Wait for backoffice nodes to be deleted
-      run: |
-        echo "----- Waiting for all nodes to be deleted -----"
-        while [ $(kubectl get nodes --no-headers | wc -l) -gt 0 ]; do
-          echo "Waiting for nodes to be deleted..."
-          sleep 10
-        done
-        echo "All backoffice-${{ inputs.environment-name }} nodes deleted successfully."
+    # - name: Wait for backoffice nodes to be deleted
+    #   run: |
+    #     echo "----- Waiting for all nodes to be deleted -----"
+    #     while [ $(kubectl get nodes --no-headers | wc -l) -gt 0 ]; do
+    #       echo "Waiting for nodes to be deleted..."
+    #       sleep 10
+    #     done
+    #     echo "All backoffice-${{ inputs.environment-name }} nodes deleted successfully."
 
 
   ######################## CLOUDSPACE #############################
@@ -252,11 +252,11 @@ jobs:
       run: |
         kubectl scale deployment karpenter --replicas=0 -n karpenter
 
-    - name: Wait for Cloudspace nodes to be deleted
-      run: |
-        echo "----- Waiting for all nodes to be deleted -----"
-        while [ $(kubectl get nodes --no-headers | wc -l) -gt 0 ]; do
-          echo "Waiting for nodes to be deleted..."
-          sleep 10
-        done
-        echo "All Cloudspace ${{ inputs.environment-name }} nodes deleted successfully."
+    # - name: Wait for Cloudspace nodes to be deleted
+    #   run: |
+    #     echo "----- Waiting for all nodes to be deleted -----"
+    #     while [ $(kubectl get nodes --no-headers | wc -l) -gt 0 ]; do
+    #       echo "Waiting for nodes to be deleted..."
+    #       sleep 10
+    #     done
+    #     echo "All Cloudspace ${{ inputs.environment-name }} nodes deleted successfully."
