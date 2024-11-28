@@ -85,7 +85,6 @@ jobs:
 
         BACKOFFICE_VALUES_FILE_PATH="backoffice/karpenter/karpenter/${{ inputs.environment-name }}"
         
-        yq eval '.karpenter.replicas = 2' -i $BACKOFFICE_VALUES_FILE_PATH/values.yaml
 
         yq eval 'del(.karpenter-resources.nodePools)' -i $BACKOFFICE_VALUES_FILE_PATH/values.yaml
 
@@ -113,32 +112,6 @@ jobs:
 
         kubectl patch nodepool.karpenter.sh argo --type=json -p='[{"op": "replace", "path": "/spec/limits/cpu", "value": 100}]'
 
-    - name: Wait for backoffice nodes to be created and ready
-      run: |
-        echo "----- Waiting for all nodes to be created and ready -----"
-        nodes_status=$(kubectl get nodes -o wide)
-
-        nodes=$(echo "$nodes_status" | awk 'NR>1 {print $1}')
-        statuses=$(echo "$nodes_status" | awk 'NR>1 {print $2}')
-
-        all_nodes_ready=true
-
-        while read -r node status; do
-        echo "Checking node: $node"
-        
-        if [ "$status" != "Ready" ]; then
-            echo "Node $node is not in Ready state. Status: $status"
-            all_nodes_ready=false
-        else
-            echo "Node $node is healthy and Ready."
-        fi
-        done <<< "$(paste <(echo "$nodes") <(echo "$statuses"))"
-
-        if [ "$all_nodes_ready" = true ]; then
-            echo "All nodes in backoffice-${{ inputs.environment-name }} are created and healthy."
-        else
-            echo "Some nodes are not in a healthy state."
-        fi
 
   ######################## CLOUDSPACE #############################
 
@@ -170,8 +143,6 @@ jobs:
           exit 1
         fi
         
-        # patch karpenter replica
-        yq eval '.karpenter.replicas = 2' -i $CLOUDSPACE_VALUES_FILE_PATH/values.yaml
 
         # Remove nodepool resources constraints
         yq eval 'del(.karpenter-resources)' -i $CLOUDSPACE_VALUES_FILE_PATH/values.yaml
@@ -182,32 +153,3 @@ jobs:
         git diff-index --quiet --cached HEAD || git commit -m "AUTO:Activate Karpenter replica and remove nodePool resources constraints in Cloudspace ${{ inputs.environment-name }}"
         
         git push
-
-
-
-    - name: Wait for Cloudspace nodes to be created and ready
-      run: |
-        echo "----- Waiting for all nodes to be created and ready -----"
-        nodes_status=$(kubectl get nodes -o wide)
-
-        nodes=$(echo "$nodes_status" | awk 'NR>1 {print $1}')
-        statuses=$(echo "$nodes_status" | awk 'NR>1 {print $2}')
-
-        all_nodes_ready=true
-
-        while read -r node status; do
-        echo "Checking node: $node"
-        
-        if [ "$status" != "Ready" ]; then
-            echo "Node $node is not in Ready state. Status: $status"
-            all_nodes_ready=false
-        else
-            echo "Node $node is healthy and Ready."
-        fi
-        done <<< "$(paste <(echo "$nodes") <(echo "$statuses"))"
-
-        if [ "$all_nodes_ready" = true ]; then
-            echo "All nodes in Cloudspace ${{ inputs.environment-name }} are created and healthy."
-        else
-            echo "Some nodes are not in a healthy state."
-        fi
