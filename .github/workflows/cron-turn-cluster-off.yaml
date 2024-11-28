@@ -95,9 +95,6 @@ jobs:
 
         BACKOFFICE_VALUES_FILE_PATH="backoffice/karpenter/karpenter/${{ inputs.environment-name }}"
 
-        yq eval '.karpenter.replicas = 0' -i $BACKOFFICE_VALUES_FILE_PATH/values.yaml
-        yq eval '.karpenter.replicas = 0' -i $CLOUDSPACE_VALUES_FILE_PATH/values.yaml
-
         yq eval '.karpenter-resources.nodePools.jobs.limits.memory = "0"' -i $BACKOFFICE_VALUES_FILE_PATH/values.yaml
         yq eval '.karpenter-resources.nodePools.jobs.limits.cpu = "0"' -i $BACKOFFICE_VALUES_FILE_PATH/values.yaml
 
@@ -166,14 +163,41 @@ jobs:
 
         git push
 
+    - name: Sleep for 30s to let Argo sync changes in nodepools
+      run: sleep 30
+
     - name: Delete Kyverno MutateWebHooks in backoffice
       run: |
         echo "Deleting Kyverno MutateWebhookConfigurations..."
 
         kubectl get mutatingwebhookconfigurations -o name | grep kyverno | xargs kubectl delete || echo "All kyverno mutating webhooks are already deleted"
 
-    - name: Drain Backoffice nodes and delete
+    - name: Drain Argo nodes and delete
       run: |
+        cluster_name=$(kubectl config current-context)
+        argo_nodes=$(kubectl get node -l karpenter.sh/nodepool=argo -o wide --no-headers | grep -v 'fargate' | awk '{print $1}')
+
+        for node in $argo_nodes
+        do
+          echo "----- Draining node $node -----"
+          kubectl drain $node --ignore-daemonsets --delete-emptydir-data --grace-period=30 --force &
+
+          echo "----- Deleting node $node -----"
+          kubectl delete node $node &
+
+          sleep 10
+
+          echo "----- Deleting remaining non-replica pods on node $node -----"
+          kubectl get po -A -o custom-columns=NAME:.metadata.name,PARENT:".metadata.ownerReferences[].kind,NODE:.spec.nodeName,NAMESPACE:.metadata.namespace" | grep -v DaemonSet | grep $node | awk '{system("kubectl delete po " $1 " -n" $4)}'
+        done
+
+        echo "----- Finished deleting all Argo nodes from $cluster_name cluster! -----"
+
+
+    - name: Drain Remaining Backoffice nodes and delete
+      run: |
+        kubectl delete pdb --all --all-namespaces
+
         cluster_name=$(kubectl config current-context)
         nodes=$(kubectl get node -o wide --no-headers | grep -v 'fargate' | awk '{print $1}')
 
@@ -192,20 +216,6 @@ jobs:
         done
 
         echo "----- Finished deleting all nodes from $cluster_name cluster! -----"
-
-    - name: Scale karpenter to 0 in backoffice
-      run: |
-        kubectl scale deployment karpenter --replicas=0 -n karpenter
-
-    # - name: Wait for backoffice nodes to be deleted
-    #   run: |
-    #     echo "----- Waiting for all nodes to be deleted -----"
-    #     while [ $(kubectl get nodes --no-headers | wc -l) -gt 0 ]; do
-    #       echo "Waiting for nodes to be deleted..."
-    #       sleep 10
-    #     done
-    #     echo "All backoffice-${{ inputs.environment-name }} nodes deleted successfully."
-
 
   ######################## CLOUDSPACE #############################
 
@@ -229,6 +239,9 @@ jobs:
 
     - name: Drain Cloudspace nodes and delete
       run: |
+
+        kubectl delete pdb --all --all-namespaces
+
         cluster_name=$(kubectl config current-context)
         nodes=$(kubectl get node -o wide --no-headers | grep -v 'fargate' | awk '{print $1}')
 
@@ -247,16 +260,3 @@ jobs:
         done
 
         echo "----- Finished deleting all nodes from $cluster_name cluster! -----"
-
-    - name: Scale karpenter to 0 in Cloudspace
-      run: |
-        kubectl scale deployment karpenter --replicas=0 -n karpenter
-
-    # - name: Wait for Cloudspace nodes to be deleted
-    #   run: |
-    #     echo "----- Waiting for all nodes to be deleted -----"
-    #     while [ $(kubectl get nodes --no-headers | wc -l) -gt 0 ]; do
-    #       echo "Waiting for nodes to be deleted..."
-    #       sleep 10
-    #     done
-    #     echo "All Cloudspace ${{ inputs.environment-name }} nodes deleted successfully."
