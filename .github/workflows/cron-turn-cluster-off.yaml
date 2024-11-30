@@ -223,6 +223,7 @@ jobs:
         done
 
         echo "----- Finished deleting all nodes from $cluster_name cluster! -----"
+        sleep 60
 
     - name: Patch finalizers of remaining nodes that are not deleted
       run: |
@@ -289,6 +290,7 @@ jobs:
         done
 
         echo "----- Finished deleting all nodes from $cluster_name cluster! -----"
+        sleep 60
 
     - name: Patch finalizers of remaining nodes that are not deleted
       run: |
