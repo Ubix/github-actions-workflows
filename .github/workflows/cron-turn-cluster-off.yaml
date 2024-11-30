@@ -224,6 +224,25 @@ jobs:
 
         echo "----- Finished deleting all nodes from $cluster_name cluster! -----"
 
+    - name: Patch finalizers of remaining nodes that are not deleted
+      run: |
+
+        cluster_name=$(kubectl config current-context)
+        nodes=$(kubectl get node -o wide --no-headers | grep -v 'fargate' | awk '{print $1}')
+
+        if [ -z "$nodes" ]; then
+          echo "No nodes to process."
+          exit 0
+        fi
+
+        for node in $nodes
+        do
+          echo "----- Patching finalizer of node $node -----"
+          kubectl drain $node --ignore-daemonsets --delete-emptydir-data --grace-period=30 --force &
+          kubectl patch node $node --type=json -p='[{"op": "remove", "path": "/metadata/finalizers"}]'
+          echo "----- Done patching finalizer of $node -----"
+
+
   ######################## CLOUDSPACE #############################
 
     - name: Configure AWS Credentials
@@ -270,3 +289,23 @@ jobs:
         done
 
         echo "----- Finished deleting all nodes from $cluster_name cluster! -----"
+
+    - name: Patch finalizers of remaining nodes that are not deleted
+      run: |
+
+        cluster_name=$(kubectl config current-context)
+        nodes=$(kubectl get node -o wide --no-headers | grep -v 'fargate' | awk '{print $1}')
+
+        if [ -z "$nodes" ]; then
+          echo "No nodes to process."
+          exit 0
+        fi
+
+        for node in $nodes
+        do
+          echo "----- Patching finalizer of node $node -----"
+          kubectl drain $node --ignore-daemonsets --delete-emptydir-data --grace-period=30 --force &
+          kubectl patch node $node --type=json -p='[{"op": "remove", "path": "/metadata/finalizers"}]'
+          echo "----- Done patching finalizer of $node -----"
+
+
