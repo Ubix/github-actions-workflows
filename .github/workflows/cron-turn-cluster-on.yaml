@@ -102,7 +102,6 @@ jobs:
 
     - name: Backoffice Karpenter and default nodepool patch
       run: |
-        kubectl patch deployment karpenter -n karpenter --type='json' -p='[{"op": "replace", "path": "/spec/replicas", "value": 2}]'
 
         kubectl patch nodepool.karpenter.sh default --type=json -p='[{"op": "remove", "path": "/spec/limits/memory"}]'
 
