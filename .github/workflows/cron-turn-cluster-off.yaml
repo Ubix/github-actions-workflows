@@ -238,7 +238,6 @@ jobs:
         for node in $nodes
         do
           echo "----- Patching finalizer of node $node -----"
-          kubectl drain $node --ignore-daemonsets --delete-emptydir-data --grace-period=30 --force &
           kubectl patch node $node --type=json -p='[{"op": "remove", "path": "/metadata/finalizers"}]'
           echo "----- Done patching finalizer of $node -----"
         done
@@ -305,7 +304,6 @@ jobs:
         for node in $nodes
         do
           echo "----- Patching finalizer of node $node -----"
-          kubectl drain $node --ignore-daemonsets --delete-emptydir-data --grace-period=30 --force &
           kubectl patch node $node --type=json -p='[{"op": "remove", "path": "/metadata/finalizers"}]'
           echo "----- Done patching finalizer of $node -----"
         done
