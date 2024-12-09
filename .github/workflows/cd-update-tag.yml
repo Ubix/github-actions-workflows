@@ -57,10 +57,14 @@ jobs:
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
         git config --global user.name "github-actions[bot]"
 
+        IFS=',' read -r -a service_paths <<< "${{inputs.service}}"
         IFS=',' read -r -a tag_paths <<< "${{inputs.tag-path}}"
-        for tag_path in "${tag_paths[@]}"
+        for service_path in "${service_paths[@]}"
         do
-          yq -i ".${{inputs.service}}.$tag_path = \"${{inputs.tag}}\"" "${{ inputs.values-path }}/values.yaml"
+          for tag_path in "${tag_paths[@]}"
+          do
+            yq -i ".$service_path.$tag_path = \"${{inputs.tag}}\"" "${{ inputs.values-path }}/values.yaml"
+          done
         done
 
         git add "${{ inputs.values-path }}/values.yaml"
