@@ -29,6 +29,10 @@ on:
         required: false
         type: string
         default: "ubuntu-22.04"
+      service_tag_paths:
+        required: false
+        type: string
+        default: ""
     secrets:
       token:
         description: 'A token passed from the caller workflow'
@@ -53,20 +57,59 @@ jobs:
 
     - name: Update Tags
       run: |
-        # change tag with yq
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
         git config --global user.name "github-actions[bot]"
 
-        IFS=',' read -r -a service_paths <<< "${{inputs.service}}"
-        IFS=',' read -r -a tag_paths <<< "${{inputs.tag-path}}"
-        for service_path in "${service_paths[@]}"
-        do
-          for tag_path in "${tag_paths[@]}"
+        if [ -n "${{ inputs.service_tag_paths }}" ]; then
+          echo "Using service_tag_paths key-value pairing."
+
+          IFS=',' read -r -a service_path_tag_path_pairs <<< "${{ inputs.service_tag_paths }}"
+          services_updated=()
+
+          for pair in "${service_path_tag_path_pairs[@]}"
           do
-            yq -i ".$service_path.$tag_path = \"${{inputs.tag}}\"" "${{ inputs.values-path }}/values.yaml"
+            IFS=':' read -r service_path tag_path <<< "$pair"
+            services_updated+=("$service_path")
+            yq -i ".$service_path.$tag_path = \"${{ inputs.tag }}\"" "${{ inputs.values-path }}/values.yaml"
           done
-        done
+
+        else
+          echo "Using separate services and tag-paths."
+
+          IFS=',' read -r -a service_paths <<< "${{ inputs.service }}"
+          IFS=',' read -r -a tag_paths <<< "${{ inputs.tag-path }}"
+          services_updated=("${service_paths[@]}")
+
+          for service_path in "${service_paths[@]}"
+          do
+            for tag_path in "${tag_paths[@]}"
+            do
+              yq -i ".$service_path.$tag_path = \"${{ inputs.tag }}\"" "${{ inputs.values-path }}/values.yaml"
+            done
+          done
+        fi
 
         git add "${{ inputs.values-path }}/values.yaml"
-        git diff-index --quiet --cached HEAD -- || git commit -m "AUTO: Bump ${{ inputs.service }} image tag to ${{ inputs.tag }} for env ${{ inputs.environment }}"
+        git diff-index --quiet --cached HEAD -- || git commit -m "AUTO: Bump ${services_updated[*]} image tag to ${{ inputs.tag }} for env ${{ inputs.environment }}"
         git push
+
+    # - name: Update Tags
+    #   run: |
+    #     # change tag with yq
+    #     git config --global user.email "github-actions[bot]@users.noreply.github.com"
+    #     git config --global user.name "github-actions[bot]"
+
+    #     IFS=',' read -r -a service_paths <<< "${{inputs.service}}"
+    #     IFS=',' read -r -a tag_paths <<< "${{inputs.tag-path}}"
+    #     for service_path in "${service_paths[@]}"
+    #     do
+    #       for tag_path in "${tag_paths[@]}"
+    #       do
+    #         yq -i ".$service_path.$tag_path = \"${{inputs.tag}}\"" "${{ inputs.values-path }}/values.yaml"
+    #       done
+    #     done
+
+    #     git add "${{ inputs.values-path }}/values.yaml"
+    #     git diff-index --quiet --cached HEAD -- || git commit -m "AUTO: Bump ${{ inputs.service }} image tag to ${{ inputs.tag }} for env ${{ inputs.environment }}"
+    #     git push
+
