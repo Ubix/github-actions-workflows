@@ -7,7 +7,7 @@ on:
         type: string
         description: "Environment that will be updated with new image tag"
       service:
-        required: true
+        required: false
         type: string
         description: "Service that will be updated with new image tag"
       tag:
